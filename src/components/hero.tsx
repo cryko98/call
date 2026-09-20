@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { COLLATERAL, EQUITIES, STATS, type Stat } from "@/lib/data";
-import { autoUsd, num, signedPct } from "@/lib/format";
+import type { MarketAsset } from "@/lib/market";
+import { autoUsd, compactNum, compactUsd, fmt, NO_DATA, signedPct } from "@/lib/format";
 import { ContractBar } from "./chrome";
+import { LiveBadge, useMarket } from "./market-context";
 
 /* ------------------------------------------------------------------ */
 /* Reduced motion                                                      */
@@ -35,36 +36,53 @@ function usePrefersReducedMotion() {
 /* ------------------------------------------------------------------ */
 
 export function TickerTape() {
-  const feed = [...COLLATERAL, ...EQUITIES];
-  const row = [...feed, ...feed];
+  const { snapshot, ageSeconds } = useMarket();
+  const feed = [...snapshot.collateral, ...snapshot.equities].filter((a) => a.price !== null);
+  const row = feed.length ? [...feed, ...feed] : [];
+  const healthy = snapshot.sources.jupiter;
 
   return (
     <div
       className="sticky top-0 z-[60] flex h-[34px] items-center overflow-hidden border-b border-line"
       style={{ background: "rgba(6, 8, 10, 0.94)", backdropFilter: "blur(8px)" }}
     >
-      <div className="label flex h-full shrink-0 items-center gap-2 border-r border-line bg-panel px-3">
+      <div
+        className="label flex h-full shrink-0 items-center gap-2 border-r border-line bg-panel px-3"
+        title={`Prices from Jupiter · updated ${ageSeconds}s ago`}
+      >
         <span
           className="pulse-dot h-1.5 w-1.5 rounded-full"
-          style={{ background: "var(--pos)", boxShadow: "0 0 8px var(--pos)" }}
+          style={{
+            background: healthy ? "var(--pos)" : "var(--amber)",
+            boxShadow: `0 0 8px ${healthy ? "var(--pos)" : "var(--amber)"}`,
+          }}
           aria-hidden="true"
         />
-        Demo feed
+        {healthy ? "Live · Jupiter" : "Feed down"}
       </div>
-      <div className="marquee-track flex w-max">
-        {row.map((a, i) => (
-          <span
-            key={`${a.symbol}-${i}`}
-            className="flex shrink-0 items-center gap-2 border-r border-line-soft px-4 text-[11.5px]"
-          >
-            <b className="font-semibold tracking-[0.04em]">{a.symbol}</b>
-            <span className="text-muted">{autoUsd(a.price)}</span>
-            <span style={{ color: a.change >= 0 ? "var(--pos)" : "var(--neg)" }}>
-              {a.change >= 0 ? "▲" : "▼"} {signedPct(a.change)}
+
+      {row.length ? (
+        <div className="marquee-track flex w-max">
+          {row.map((a, i) => (
+            <span
+              key={`${a.symbol}-${i}`}
+              className="flex shrink-0 items-center gap-2 border-r border-line-soft px-4 text-[11.5px]"
+            >
+              <b className="font-semibold tracking-[0.04em]">{a.symbol}</b>
+              <span className="text-muted">{fmt(a.price, autoUsd)}</span>
+              {a.change24h !== null && (
+                <span style={{ color: a.change24h >= 0 ? "var(--pos)" : "var(--neg)" }}>
+                  {a.change24h >= 0 ? "▲" : "▼"} {signedPct(a.change24h)}
+                </span>
+              )}
             </span>
-          </span>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <span className="px-4 text-[11.5px] text-dim">
+          Price feed unavailable — retrying automatically
+        </span>
+      )}
     </div>
   );
 }
@@ -75,18 +93,6 @@ export function TickerTape() {
 
 type Tone = "cmd" | "ok" | "warn" | "dim";
 
-const LINES: { text: string; tone: Tone }[] = [
-  { text: "$ margin-call init --chain solana", tone: "cmd" },
-  { text: "  ✓ wallet connected · 7xK…9mQ2", tone: "ok" },
-  { text: "$ deposit 100 SOL --as collateral", tone: "cmd" },
-  { text: "  ✓ collateral posted · $21,460.00", tone: "ok" },
-  { text: "$ borrow 10730 USDC --ltv 0.50", tone: "cmd" },
-  { text: "  ✓ funded · liquidation at $134.13", tone: "ok" },
-  { text: "$ swap USDC → NVDAx", tone: "cmd" },
-  { text: "  ✓ filled · 58.49 NVDAx · long equity", tone: "warn" },
-  { text: "  ▸ crypto exposure: UNCHANGED", tone: "dim" },
-];
-
 const TONE_COLOR: Record<Tone, string> = {
   cmd: "var(--pos)",
   ok: "var(--pos)",
@@ -94,8 +100,57 @@ const TONE_COLOR: Record<Tone, string> = {
   dim: "var(--muted)",
 };
 
+/**
+ * The session narrates a position built from the live SOL price and the live
+ * Kamino parameters, so the terminal never contradicts the calculator below.
+ */
+function buildLines(sol: MarketAsset | undefined, nvda: MarketAsset | undefined) {
+  const price = sol?.price ?? null;
+  const ltv = 0.5;
+  const amount = 100;
+
+  if (price === null || !sol) {
+    return [
+      { text: "$ margin-call init --chain solana", tone: "cmd" as Tone },
+      { text: "  ✓ wallet connected · 7xK…9mQ2", tone: "ok" as Tone },
+      { text: "  ! price feed unreachable — retrying", tone: "warn" as Tone },
+    ];
+  }
+
+  const collateralValue = amount * price;
+  const debt = collateralValue * ltv;
+  const threshold = sol.liqThreshold ?? 0.8;
+  const liqPrice = debt / (amount * threshold);
+  const units = nvda?.price ? debt / nvda.price : null;
+
+  return [
+    { text: "$ margin-call init --chain solana", tone: "cmd" as Tone },
+    { text: "  ✓ wallet connected · 7xK…9mQ2", tone: "ok" as Tone },
+    { text: `$ deposit ${amount} SOL --as collateral`, tone: "cmd" as Tone },
+    { text: `  ✓ collateral posted · ${autoUsd(collateralValue)}`, tone: "ok" as Tone },
+    { text: `$ borrow ${Math.round(debt)} USDC --ltv ${ltv.toFixed(2)}`, tone: "cmd" as Tone },
+    { text: `  ✓ funded · liquidation at ${autoUsd(liqPrice)}`, tone: "ok" as Tone },
+    { text: "$ swap USDC → NVDAx", tone: "cmd" as Tone },
+    {
+      text: units
+        ? `  ✓ filled · ${units.toFixed(2)} NVDAx · long equity`
+        : "  ✓ filled · long equity",
+      tone: "warn" as Tone,
+    },
+    { text: "  ▸ crypto exposure: UNCHANGED", tone: "dim" as Tone },
+  ];
+}
+
 function Terminal() {
   const reduced = usePrefersReducedMotion();
+  const { snapshot } = useMarket();
+  const sol = snapshot.collateral.find((a) => a.symbol === "SOL");
+  const nvda = snapshot.equities.find((a) => a.symbol === "NVDAx");
+
+  // Freeze the narrated numbers at mount so a background refresh does not
+  // rewrite lines that have already been typed out.
+  const [LINES] = useState(() => buildLines(sol, nvda));
+
   const [lines, setLines] = useState<{ text: string; tone: Tone }[]>([]);
   const [done, setDone] = useState(false);
 
@@ -133,7 +188,7 @@ function Terminal() {
 
     timer = setTimeout(step, 420);
     return () => clearTimeout(timer);
-  }, [reduced]);
+  }, [reduced, LINES]);
 
   // With motion reduced the whole session is shown at once, no typing.
   const shown = reduced ? LINES : lines;
@@ -150,7 +205,7 @@ function Terminal() {
       <div
         className="px-4 py-3.5 text-[12px] leading-[1.95]"
         style={{ minHeight: 196 }}
-        aria-label="Example terminal session"
+        aria-label="Example position built from live prices"
       >
         {shown.map((l, i) => (
           <div key={i} style={{ color: TONE_COLOR[l.tone] }}>
@@ -167,13 +222,13 @@ function Terminal() {
 /* Stats                                                               */
 /* ------------------------------------------------------------------ */
 
-function useCountUp(target: number, duration = 1200) {
+function useCountUp(target: number | null, duration = 1200) {
   const reduced = usePrefersReducedMotion();
   const [value, setValue] = useState(0);
   const frame = useRef(0);
 
   useEffect(() => {
-    if (reduced || target === 0) return;
+    if (reduced || target === null || target === 0) return;
 
     const start = performance.now();
     const tick = (now: number) => {
@@ -186,40 +241,83 @@ function useCountUp(target: number, duration = 1200) {
     return () => cancelAnimationFrame(frame.current);
   }, [target, duration, reduced]);
 
+  if (target === null) return null;
   return reduced ? target : value;
 }
 
-function StatCell({ stat, delay }: { stat: Stat; delay: number }) {
-  const v = useCountUp(stat.value);
+function StatCell({
+  label,
+  target,
+  format,
+  note,
+  noteTone,
+  delay,
+}: {
+  label: string;
+  target: number | null;
+  format: (v: number) => string;
+  note: string;
+  noteTone?: "pos" | "dim";
+  delay: number;
+}) {
+  const v = useCountUp(target);
 
   return (
     <div
       className="rise border-b border-line px-5 py-5 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="label">{stat.label}</div>
+      <div className="label">{label}</div>
       <div className="mt-1.5 text-[24px] font-semibold tracking-tight sm:text-[27px]">
-        {stat.prefix ?? ""}
-        {num(v, 0)}
-        {stat.suffix ? <span className="text-[0.62em] text-muted">{stat.suffix}</span> : null}
+        {v === null ? <span className="text-dim">{NO_DATA}</span> : format(v)}
       </div>
       <div
         className="mt-1 text-[10.5px]"
-        style={{ color: stat.noteTone === "pos" ? "var(--pos)" : "var(--dim)" }}
+        style={{ color: noteTone === "pos" ? "var(--pos)" : "var(--dim)" }}
       >
-        {stat.note}
+        {v === null ? "source unavailable" : note}
       </div>
     </div>
   );
 }
 
 export function StatStrip() {
+  const { snapshot } = useMarket();
+  const { totals } = snapshot;
+  const solBorrow = snapshot.collateral.find((a) => a.symbol === "SOL")?.borrowApy ?? null;
+
   return (
     <div className="border-y border-line bg-panel">
       <div className="mx-auto grid max-w-6xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {STATS.map((s, i) => (
-          <StatCell key={s.label} stat={s} delay={220 + i * 70} />
-        ))}
+        <StatCell
+          label="xStock liquidity on Solana"
+          target={totals.equityLiquidityUsd}
+          format={compactUsd}
+          note="across tracked equity pools"
+          delay={220}
+        />
+        <StatCell
+          label="xStock 24h volume"
+          target={totals.equityVolume24h}
+          format={compactUsd}
+          note="real DEX turnover"
+          noteTone="pos"
+          delay={290}
+        />
+        <StatCell
+          label="Live equity markets"
+          target={totals.equityMarkets}
+          format={(v) => compactNum(v)}
+          note="priced this minute"
+          delay={360}
+        />
+        <StatCell
+          label="SOL borrow rate"
+          target={solBorrow}
+          format={(v) => `${v.toFixed(2)}%`}
+          note="Kamino main market"
+          delay={430}
+        />
       </div>
     </div>
   );
@@ -238,13 +336,16 @@ export function Hero() {
       </div>
 
       <div className="mx-auto max-w-6xl px-5 pt-16 pb-16 sm:px-6 sm:pt-20">
-        <div className="rise label inline-flex items-center gap-2 border border-line bg-panel px-3 py-1.5">
-          <span
-            className="pulse-dot h-1.5 w-1.5 rounded-full"
-            style={{ background: "var(--pos)" }}
-            aria-hidden="true"
-          />
-          Built on Solana · SPL token
+        <div className="rise flex flex-wrap items-center gap-2.5">
+          <span className="label inline-flex items-center gap-2 border border-line bg-panel px-3 py-1.5">
+            <span
+              className="pulse-dot h-1.5 w-1.5 rounded-full"
+              style={{ background: "var(--pos)" }}
+              aria-hidden="true"
+            />
+            Built on Solana · SPL token
+          </span>
+          <LiveBadge />
         </div>
 
         <h1

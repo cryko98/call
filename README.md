@@ -12,76 +12,95 @@ npm run build
 npm run lint
 ```
 
-## ⚠ All market data on this site is simulated
+## Where the numbers come from
 
-Every price, APY, APR and 24h change rendered on the page is a **hardcoded
-placeholder** living in `src/lib/data.ts`. Nothing is fetched. The page marks
-this in three places — the `DEMO FEED` label on the ticker, the amber flags on
-the calculator and markets sections, and the FAQ — and those markers should stay
-until real feeds are wired in. Shipping fake numbers without them would be
-misleading to anyone reading the page as live data.
+Everything on the page that can be real, is real. Two public, key-less sources,
+fetched server-side and refreshed about once a minute:
 
-The contract address is deliberately empty (`BRAND.contract = ""`), which renders
-as *"Not yet deployed"* and disables the copy button. Fill it in at TGE and the
-bar starts working on its own.
+| Data | Source | Notes |
+| --- | --- | --- |
+| Price, 24h change, liquidity, 24h volume, holders | **Jupiter** (`lite-api.jup.ag`) | One bulk query for every mint |
+| Supply APY, borrow APY, max LTV | **Kamino** main lending market | Live on-chain reserve parameters |
+| Liquidation threshold | *protocol parameter* | max LTV + 5pp, capped at 95% — set by us, labelled as such |
+| $CALL price / market cap | *none* | The token is not minted; the page says so instead of inventing figures |
 
-## Layout
+The tokenized equities (SPYx, AAPLx, NVDAx, TSLAx, MSTRx, GOOGLx, MSFTx) are
+real Backed Finance xStocks trading on Solana today, which is what makes live
+pricing possible at all. Every mint in `src/lib/tokens.ts` was resolved through
+the Jupiter API and cross-checked on issuer name, liquidity and holder count —
+re-verify any of them with:
 
-```
-src/
-  app/
-    layout.tsx      fonts, metadata, OG tags
-    globals.css     design tokens + terminal/CRT styling
-    page.tsx        section order
-  components/
-    chrome.tsx      logo, nav, contract bar, footer
-    hero.tsx        ticker tape, typewriter terminal, stat strip
-    calculator.tsx  position builder (the interactive piece)
-    markets.tsx     collateral / borrow market tables
-    sections.tsx    how it works, risk engine, tokenomics, roadmap, FAQ
-  lib/
-    data.ts         all copy + market data + risk bands
-    format.ts       currency / percent formatting
+```bash
+curl "https://lite-api.jup.ag/tokens/v2/search?query=AAPLx"
 ```
 
-Nearly all copy lives in `data.ts`. Editing the roadmap, FAQ, tokenomics split or
-market list should not require touching a component.
+### No invented fallbacks
+
+If a source fails, the affected fields come back `null` and the UI renders `—`
+with a "Degraded feed" badge. It never substitutes a plausible-looking number. A
+wrong figure on a lending page is worse than a missing one.
+
+## Data flow
+
+```
+src/lib/tokens.ts      verified mint registry + Jupiter deep-link helper
+src/lib/market.ts      fetches Jupiter + Kamino, builds MarketSnapshot
+src/app/page.tsx       server component: awaits the snapshot (ISR, 60s)
+src/app/api/market/    same snapshot as JSON, for the client poller
+src/components/
+  market-context.tsx   holds the snapshot, polls /api/market, LiveBadge
+  hero.tsx             ticker tape, terminal, headline stats
+  calculator.tsx       position builder
+  markets.tsx          collateral + equity tables
+  sections.tsx         how it works, risk engine, tokenomics, roadmap, FAQ
+  chrome.tsx           logo, nav, contract bar, footer
+src/lib/data.ts        editorial copy + risk bands only — no market data
+```
+
+The client refetches on an interval and when the tab regains focus, skipping the
+request while the tab is hidden. A failed background refresh keeps the last good
+snapshot on screen and flips the badge rather than blanking the page.
+
+`revalidate` is exported as a literal `60` in both `page.tsx` and the API route —
+Next.js analyses that export statically, so it cannot be an imported constant.
+Keep it in step with `REVALIDATE_SECONDS`.
 
 ## Calculator maths
 
-Given collateral amount `A` at price `P`, threshold `T` and chosen LTV `L`:
+Given collateral amount `A` at live price `P`, threshold `T` and chosen LTV `L`:
 
 ```
 collateralValue = A × P
 debt            = collateralValue × L
 liquidationPx   = debt / (A × T)
 healthFactor    = (collateralValue × T) / debt
-netAnnualCarry  = collateralValue × supplyApy − debt × borrowApr
+netAnnualCarry  = collateralValue × supplyApy − debt × borrowApy
 ```
 
 Health factor drives the colour band in `healthBand()`: ≥1.8 safe, ≥1.35
-moderate, ≥1.0 at risk, below that liquidatable. The hero terminal narrates the
-same example the calculator produces at its defaults (100 SOL, 50% LTV →
-10,730 USDC, liquidation at $134.13), so if you change the default prices,
-update the terminal lines in `hero.tsx` to match.
+moderate, ≥1.0 at risk, below that liquidatable. The LTV slider is capped at the
+live max LTV for the selected collateral, and assets without a live price are
+disabled rather than guessed at.
 
-The model excludes gas, liquidation penalties and rate drift — it is a
-sizing tool, not a risk system.
+The hero terminal narrates a position built from the same live inputs, so it can
+never contradict the calculator below it.
 
-## Going live
+The model excludes gas, liquidation penalties and rate drift — it is a sizing
+tool, not a risk system.
 
-1. **Prices** — replace the static `price` / `change` fields with Pyth
-   (`@pythnetwork/hermes-client`) or Birdeye. The components already read from
-   `data.ts`, so a loader that returns the same shapes drops straight in.
-2. **Token stats** — DexScreener's public endpoint
-   (`api.dexscreener.com/latest/dex/tokens/<mint>`) covers price, market cap,
-   liquidity and volume with no API key. That fills the `STATS` strip.
-3. **Pool rates** — supply/borrow APY come from the lending program's own
-   utilisation curve; until that exists on devnet they stay placeholders.
-4. **Remove the DEMO flags** only once 1–3 are actually live.
+## At token launch
+
+Set `BRAND.contract` in `src/lib/data.ts` to the $CALL mint. The contract bar
+switches from "Not yet deployed" to a working copy button on its own. To show
+live $CALL market data, add the mint to `src/lib/tokens.ts` and it flows through
+the existing pipeline with no other changes.
 
 ## Legal
 
 The footer carries a risk disclaimer. If this is promoted to EU users, that
 disclaimer and the "not financial advice" framing are a MiCA requirement, not a
 nicety — keep them.
+
+Note that the site describes a lending protocol that does not exist yet: the
+roadmap marks devnet and mainnet as unshipped, and the FAQ states plainly that
+nothing has been audited. Keep those honest as the project moves.

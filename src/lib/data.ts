@@ -1,9 +1,10 @@
 /**
- * Reference data for the Margin Call marketing site.
+ * Static copy and protocol parameters.
  *
- * Every price, rate and yield here is a SIMULATED snapshot used to render the
- * page while the protocol is pre-launch. Nothing in this file is live market
- * data — see README.md for the Pyth / DexScreener integration notes.
+ * No market data lives here. Prices, 24h changes, supply/borrow rates and
+ * max-LTV values are fetched live in `src/lib/market.ts` from Jupiter and
+ * Kamino. What remains below is editorial copy plus the risk bands, which are
+ * protocol design parameters rather than observations.
  */
 
 export const BRAND = {
@@ -21,90 +22,6 @@ export const SOCIALS = [
   { label: "DexScreener", href: "#" },
   { label: "GitHub", href: "#" },
 ] as const;
-
-/* ------------------------------------------------------------------ */
-/* Markets                                                             */
-/* ------------------------------------------------------------------ */
-
-export type CollateralAsset = {
-  symbol: string;
-  name: string;
-  price: number;
-  /** Maximum loan-to-value at origination. */
-  maxLtv: number;
-  /** LTV at which the position becomes liquidatable. */
-  liqThreshold: number;
-  supplyApy: number;
-  change: number;
-  tint: string;
-  /** Sensible starting amount for the calculator. */
-  defaultAmount: number;
-};
-
-export type EquityAsset = {
-  symbol: string;
-  name: string;
-  price: number;
-  borrowApr: number;
-  change: number;
-  tint: string;
-};
-
-export const COLLATERAL: CollateralAsset[] = [
-  {
-    symbol: "SOL",
-    name: "Solana",
-    price: 214.6,
-    maxLtv: 0.75,
-    liqThreshold: 0.8,
-    supplyApy: 4.1,
-    change: 3.12,
-    tint: "#9b7cf6",
-    defaultAmount: 100,
-  },
-  {
-    symbol: "jitoSOL",
-    name: "Jito Staked SOL",
-    price: 246.8,
-    maxLtv: 0.72,
-    liqThreshold: 0.77,
-    supplyApy: 7.8,
-    change: 3.24,
-    tint: "#00e676",
-    defaultAmount: 100,
-  },
-  {
-    symbol: "wBTC",
-    name: "Wrapped Bitcoin",
-    price: 97420,
-    maxLtv: 0.75,
-    liqThreshold: 0.8,
-    supplyApy: 2.2,
-    change: -0.86,
-    tint: "#f7931a",
-    defaultAmount: 1,
-  },
-  {
-    symbol: "wETH",
-    name: "Wrapped Ether",
-    price: 3612,
-    maxLtv: 0.73,
-    liqThreshold: 0.78,
-    supplyApy: 2.9,
-    change: 1.47,
-    tint: "#4da3ff",
-    defaultAmount: 10,
-  },
-];
-
-export const EQUITIES: EquityAsset[] = [
-  { symbol: "USDC", name: "USD Coin", price: 1, borrowApr: 6.2, change: 0.01, tint: "#2775ca" },
-  { symbol: "SPYx", name: "S&P 500 ETF", price: 614.05, borrowApr: 6.8, change: 0.31, tint: "#4da3ff" },
-  { symbol: "AAPLx", name: "Apple Inc.", price: 241.18, borrowApr: 8.1, change: 0.74, tint: "#dce4ed" },
-  { symbol: "NVDAx", name: "NVIDIA Corp.", price: 183.42, borrowApr: 9.4, change: 2.31, tint: "#76b900" },
-  { symbol: "TSLAx", name: "Tesla Inc.", price: 402.77, borrowApr: 11.2, change: -1.92, tint: "#ff4d4d" },
-  { symbol: "MSTRx", name: "Strategy Inc.", price: 328.9, borrowApr: 14.6, change: -3.47, tint: "#ffb000" },
-];
 
 /* ------------------------------------------------------------------ */
 /* Risk                                                                */
@@ -153,27 +70,11 @@ export function healthBand(hf: number): HealthBand {
 /* Copy                                                                */
 /* ------------------------------------------------------------------ */
 
-export type Stat = {
-  label: string;
-  value: number;
-  prefix?: string;
-  suffix?: string;
-  note: string;
-  noteTone?: "pos" | "muted";
-};
-
-export const STATS: Stat[] = [
-  { label: "Total value locked", value: 0, prefix: "$", note: "pre-launch" },
-  { label: "Tokenized equities", value: 12, note: "+4 next quarter", noteTone: "pos" },
-  { label: "Max LTV", value: 75, suffix: "%", note: "on blue-chip collateral" },
-  { label: "Liquidation penalty", value: 5, suffix: "%", note: "flat, no hidden fees" },
-];
-
 export const STEPS = [
   {
     n: "01",
     title: "Deposit collateral",
-    body: "Supply SOL, jitoSOL, wBTC or wETH into an isolated vault. Liquid-staking collateral keeps earning its native yield the whole time it backs a loan.",
+    body: "Supply SOL, JitoSOL, cbBTC or wETH into an isolated vault. Liquid-staking collateral keeps earning its native yield the whole time it backs a loan.",
   },
   {
     n: "02",
@@ -271,7 +172,7 @@ export const ROADMAP: {
     phase: "Phase 02",
     title: "Devnet lending market",
     status: "next",
-    items: ["SOL / jitoSOL / wBTC collateral vaults", "USDC borrow pool with utilisation curve", "Pyth feeds and liquidation engine"],
+    items: ["SOL / JitoSOL / cbBTC collateral vaults", "USDC borrow pool with utilisation curve", "Pyth feeds and liquidation engine"],
   },
   {
     phase: "Phase 03",
@@ -303,7 +204,7 @@ export const FAQ = [
     a: "Not yet. The lending program is pre-devnet. A third-party audit is scheduled before any mainnet deployment and the full report will be published, including whatever it finds. Until that report exists, treat every number on this page as a design target rather than a live system.",
   },
   {
-    q: "Is the data on this page live?",
-    a: "No. Every price, rate and APY shown here is simulated while the protocol is pre-launch — that is what the amber DEMO flags mark. They get replaced by live oracle and pool data at launch.",
+    q: "Where do the numbers on this page come from?",
+    a: "Prices, 24h moves, liquidity and volume are pulled live from Jupiter, and the supply and borrow rates plus max-LTV parameters come from Kamino’s main lending market on Solana. Both refresh about once a minute. Liquidation thresholds are protocol parameters we set rather than fetched values, and they are labelled that way. $CALL itself has no market data because the token is not minted yet — that section shows the launch plan, not trading figures.",
   },
 ];

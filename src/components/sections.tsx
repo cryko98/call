@@ -17,12 +17,10 @@ export function SectionHead({
   tag,
   title,
   sub,
-  demo,
 }: {
   tag: string;
   title: React.ReactNode;
   sub?: string;
-  demo?: string;
 }) {
   return (
     <div className="max-w-2xl">
@@ -33,18 +31,6 @@ export function SectionHead({
         {title}
       </h2>
       {sub ? <p className="mt-3 text-[13px] leading-[1.8] text-muted">{sub}</p> : null}
-      {demo ? (
-        <div
-          className="mt-5 inline-flex items-center gap-2 border px-3 py-1.5 text-[9.5px] tracking-[0.14em] uppercase"
-          style={{
-            borderColor: "var(--amber)",
-            color: "var(--amber)",
-            background: "rgba(255,176,0,0.06)",
-          }}
-        >
-          ⚠ {demo}
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -135,7 +121,7 @@ export function Tokenomics() {
       <SectionHead
         tag="// 05 — The token"
         title="$CALL"
-        sub="A fixed-supply SPL token. Protocol fees route to stakers, and governance controls collateral onboarding and risk parameters."
+        sub="A fixed-supply SPL token. Protocol fees route to stakers, and governance controls collateral onboarding and risk parameters. The token is not minted yet, so this section is the launch plan — there is no price or market data to show."
       />
 
       <div className="panel mt-9 grid lg:grid-cols-2">
