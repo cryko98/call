@@ -13,7 +13,6 @@ import {
   HowItWorks,
   Roadmap,
   SectionHead,
-  Tokenomics,
 } from "@/components/sections";
 import { getMarketSnapshot } from "@/lib/market";
 
@@ -133,7 +132,6 @@ export default async function Home() {
           <CalculatorSection />
           <SwapSection />
           <MarketsSection />
-          <Tokenomics />
           <Roadmap />
           <Faq />
           <ClosingCta />

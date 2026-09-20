@@ -34,7 +34,6 @@ const NAV_LINKS = [
   { href: "#borrow", label: "Calculator" },
   { href: "#swap", label: "Swap" },
   { href: "#markets", label: "Markets" },
-  { href: "#token", label: "$CALL" },
   { href: "#faq", label: "FAQ" },
 ];
 

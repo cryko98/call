@@ -1,14 +1,5 @@
-import {
-  FAQ,
-  GUARANTEES,
-  PILLARS,
-  ROADMAP,
-  STEPS,
-  TOKEN_UTILITY,
-  TOKENOMICS,
-  type RoadmapStatus,
-} from "@/lib/data";
-import { HandArrow, PixelCloud, PixelCoin, Sparkle } from "./pixel-art";
+import { FAQ, PILLARS, ROADMAP, STEPS, type RoadmapStatus } from "@/lib/data";
+import { HandArrow, PixelCloud, Sparkle } from "./pixel-art";
 
 /* ------------------------------------------------------------------ */
 /* Shared section shell                                                */
@@ -123,88 +114,6 @@ export function Architecture() {
             <p className="mt-3 text-[14.5px] leading-relaxed font-medium text-ink/75">{p.body}</p>
           </div>
         ))}
-      </div>
-    </Section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Tokenomics                                                          */
-/* ------------------------------------------------------------------ */
-
-export function Tokenomics() {
-  return (
-    <Section id="token" band="band-orange">
-      <div className="relative">
-        <PixelCoin size={42} className="bob absolute -top-4 right-2 hidden sm:block" />
-        <SectionHead
-          tag="The token"
-          title="$CALL"
-          sub="A fixed-supply SPL token. Protocol fees route to stakers, and governance controls collateral onboarding and risk parameters. The token is not minted yet, so this is the launch plan — there is no price or market data to show."
-        />
-      </div>
-
-      <div className="mt-10 grid gap-5 lg:grid-cols-2">
-        <div className="pop p-6 sm:p-7">
-          <div className="label">Supply — 1,000,000,000 $CALL</div>
-          <div className="mt-5 flex flex-col gap-4">
-            {TOKENOMICS.map((t) => (
-              <div key={t.label}>
-                <div className="flex items-baseline justify-between gap-4">
-                  <span className="text-[14.5px] font-bold">
-                    {t.label}
-                    {t.sub ? (
-                      <span className="ml-2 text-[12.5px] font-semibold text-ink/45">{t.sub}</span>
-                    ) : null}
-                  </span>
-                  <b className="text-[16px] font-extrabold">{t.pct}%</b>
-                </div>
-                <div className="mt-1.5 h-4 overflow-hidden rounded-full border-[2.5px] border-ink bg-white">
-                  <div
-                    className="h-full"
-                    style={{ width: `${t.pct}%`, background: t.tint }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-7 border-t-[3px] border-ink pt-5">
-            <div className="label">What it does</div>
-            <div className="mt-3 flex flex-col gap-3.5">
-              {TOKEN_UTILITY.map((u) => (
-                <div key={u.title}>
-                  <h4 className="text-[15px] font-extrabold">{u.title}</h4>
-                  <p className="mt-0.5 text-[13.5px] leading-snug font-medium text-ink/70">
-                    {u.body}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="pop p-6 sm:p-7" style={{ background: "var(--lemon)" }}>
-          <div className="label">Safety guarantees</div>
-          <ul className="mt-4 flex flex-col gap-3.5">
-            {GUARANTEES.map((g) => (
-              <li key={g.title} className="flex gap-3">
-                <span
-                  className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border-[2.5px] border-ink bg-white text-[13px] font-black"
-                  aria-hidden="true"
-                >
-                  ✓
-                </span>
-                <div>
-                  <h4 className="text-[15px] font-extrabold">{g.title}</h4>
-                  <p className="mt-0.5 text-[13.5px] leading-snug font-medium text-ink/70">
-                    {g.body}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
       </div>
     </Section>
   );

@@ -27,41 +27,36 @@ export const SOCIALS = [
 /* Risk                                                                */
 /* ------------------------------------------------------------------ */
 
-export type HealthBand = { label: string; color: string; note: (drop: string, sym: string) => string };
+export type HealthBand = { label: string; note: (drop: string, sym: string) => string };
 
 /** Health-factor risk bands, ordered from safest to most dangerous. */
 export function healthBand(hf: number): HealthBand {
   if (!Number.isFinite(hf)) {
     return {
       label: "No debt",
-      color: "var(--muted)",
       note: () => "Nothing drawn. Your collateral is fully unencumbered.",
     };
   }
   if (hf >= 1.8) {
     return {
       label: "Safe",
-      color: "var(--pos)",
       note: (drop, sym) => `${sym} would have to fall ${drop} before this position is liquidatable.`,
     };
   }
   if (hf >= 1.35) {
     return {
       label: "Moderate",
-      color: "var(--amber)",
       note: (drop, sym) => `A ${drop} drawdown in ${sym} triggers liquidation. Worth watching.`,
     };
   }
   if (hf >= 1) {
     return {
       label: "At risk",
-      color: "var(--neg)",
       note: (drop, sym) => `Only ${drop} of downside left in ${sym}. Add collateral or repay.`,
     };
   }
   return {
     label: "Liquidatable",
-    color: "var(--neg)",
     note: () => "A position at this level would be liquidated immediately.",
   };
 }
@@ -92,7 +87,7 @@ export const PILLARS = [
   {
     title: "Pyth price feeds",
     body: "Marks come from Pyth first-party publishers with confidence intervals enforced on-chain. A stale or wide-band price pauses the market rather than mispricing it.",
-    tint: "var(--amber)",
+    tint: "var(--gold)",
   },
   {
     title: "Isolated risk pools",
@@ -107,45 +102,8 @@ export const PILLARS = [
   {
     title: "Dutch-auction liquidations",
     body: "Underwater positions unwind through a descending-price auction instead of a flat bonus, keeping the penalty proportionate to how far a position drifted.",
-    tint: "var(--info)",
+    tint: "var(--cornflower)",
   },
-];
-
-export const TOKENOMICS = [
-  { label: "Liquidity pool", sub: "LP burned at launch", pct: 40, tint: "var(--amber)" },
-  { label: "Community & airdrop", sub: "no allocation to insiders", pct: 25, tint: "var(--pos)" },
-  { label: "Protocol treasury", sub: "governance controlled", pct: 15, tint: "var(--info)" },
-  { label: "Team", sub: "6mo cliff, 24mo linear vest", pct: 12, tint: "var(--violet)" },
-  { label: "Listings & market making", pct: 8, tint: "var(--dim)" },
-];
-
-export const GUARANTEES = [
-  {
-    title: "Mint authority revoked",
-    body: "Supply is permanently capped at 1,000,000,000. No new tokens can ever be minted.",
-  },
-  {
-    title: "Freeze authority revoked",
-    body: "No address can be blacklisted and no balance can be frozen, including by the team.",
-  },
-  {
-    title: "LP tokens burned",
-    body: "Initial liquidity is locked forever. It cannot be withdrawn by anyone, ever.",
-  },
-  {
-    title: "No team allocation at TGE",
-    body: "Six-month cliff, then linear vesting over 24 months, enforced on-chain.",
-  },
-  {
-    title: "Fair launch",
-    body: "No private round, no presale, no discounted insider allocation.",
-  },
-];
-
-export const TOKEN_UTILITY = [
-  { title: "Fee share", body: "A slice of the protocol interest spread routes to stakers each epoch." },
-  { title: "Governance", body: "Vote on which collateral gets listed, at what LTV, and on the liquidation curve." },
-  { title: "Fee rebate", body: "A staked balance reduces your borrow spread on a sliding scale." },
 ];
 
 export type RoadmapStatus = "done" | "active" | "next";
@@ -158,15 +116,23 @@ export const ROADMAP: {
 }[] = [
   {
     phase: "Phase 00",
-    title: "Foundations",
+    title: "This site",
     status: "done",
-    items: ["Protocol design and risk framework", "Core lending program written", "Site, brand and community launch"],
+    items: [
+      "Live prices and lending rates from Jupiter and Kamino",
+      "Working swap into tokenized stocks, signed by your wallet",
+      "Position calculator built on the live parameters",
+    ],
   },
   {
     phase: "Phase 01",
-    title: "Token generation event",
-    status: "active",
-    items: ["$CALL fair launch, LP burned", "Mint and freeze authority revoked", "DexScreener and Birdeye listings"],
+    title: "Lending program",
+    status: "next",
+    items: [
+      "Core program written and reviewed",
+      "Risk framework and liquidation design finalised",
+      "Public repository",
+    ],
   },
   {
     phase: "Phase 02",
@@ -178,7 +144,7 @@ export const ROADMAP: {
     phase: "Phase 03",
     title: "Mainnet & equities",
     status: "next",
-    items: ["Third-party audit published in full", "Mainnet launch under a capped TVL", "Tokenized equity markets, $CALL staking live"],
+    items: ["Third-party audit published in full", "Mainnet launch under a capped TVL", "Tokenized equity collateral markets"],
   },
 ];
 
@@ -196,8 +162,8 @@ export const FAQ = [
     a: "Two reasons. Selling realises a taxable event in most jurisdictions while borrowing generally does not — though this varies and is not tax advice. And if you still believe in the position, selling to buy equities means giving up the upside. Borrowing lets you hold both sides. The cost is the interest; the risk is liquidation.",
   },
   {
-    q: "What is $CALL for?",
-    a: "Three things: governance over which collateral assets get listed and at what LTV, a share of protocol interest revenue for stakers, and fee rebates on borrowing. It is not a claim on protocol assets and it is not equity in any company.",
+    q: "Is there a $CALL token?",
+    a: "No. Nothing has been minted, so there is no supply, no liquidity pool, no vesting schedule and nothing to buy. Anything currently trading under that ticker is not ours. When a token does exist its mint address will be published here and the details will follow it — we would rather show you nothing than a distribution chart for a token that has not been created.",
   },
   {
     q: "Has this been audited?",
@@ -205,6 +171,6 @@ export const FAQ = [
   },
   {
     q: "Where do the numbers on this page come from?",
-    a: "Prices, 24h moves, liquidity and volume are pulled live from Jupiter, and the supply and borrow rates plus max-LTV parameters come from Kamino’s main lending market on Solana. Both refresh about once a minute. Liquidation thresholds are protocol parameters we set rather than fetched values, and they are labelled that way. $CALL itself has no market data because the token is not minted yet — that section shows the launch plan, not trading figures.",
+    a: "Prices, 24h moves, liquidity and volume are pulled live from Jupiter, and the supply and borrow rates plus max-LTV parameters come from Kamino’s main lending market on Solana. Both refresh about once a minute. Liquidation thresholds are protocol parameters we set rather than fetched values, and they are labelled that way. Nothing on this page is a placeholder: if a source is unavailable you get an em-dash rather than an invented number.",
   },
 ];
