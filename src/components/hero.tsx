@@ -77,6 +77,9 @@ export function TickerTape() {
 /* Stacked price cards                                                 */
 /* ------------------------------------------------------------------ */
 
+/** Shown stacked in the hero — the tickers people recognise instantly. */
+const HERO_SYMBOLS = ["SPYx", "NVDAx", "TSLAx", "AAPLx", "MSTRx"];
+
 const TILTS = ["rotate(-4deg)", "rotate(2.2deg)", "rotate(-1.6deg)", "rotate(3.4deg)", "rotate(-2.6deg)"];
 
 function PriceCard({
@@ -139,9 +142,9 @@ function StackedCards() {
   const { snapshot } = useMarket();
   const reduced = usePrefersReducedMotion();
 
-  const cards = snapshot.equities
-    .filter((a) => a.symbol !== "USDC" && a.price !== null)
-    .slice(0, 5);
+  // A fixed, recognisable line-up rather than whatever happens to sort first.
+  const cards = HERO_SYMBOLS.map((sym) => snapshot.equities.find((a) => a.symbol === sym))
+    .filter((a): a is MarketAsset => a !== undefined && a.price !== null);
 
   if (!cards.length) {
     return (

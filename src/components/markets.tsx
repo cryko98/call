@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import type { MarketAsset } from "@/lib/market";
 import { jupiterSwapUrl } from "@/lib/tokens";
 import { autoUsd, compactNum, compactUsd, fmt, NO_DATA, pct, signedPct } from "@/lib/format";
@@ -108,11 +108,21 @@ export function Markets() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((a) => (
-              <tr
-                key={a.symbol}
-                className="border-b-2 border-ink/10 transition-colors last:border-b-0 hover:bg-mist/40"
-              >
+            {rows.map((a, i) => (
+              <Fragment key={a.symbol}>
+                {/* A header row each time the sector changes. */}
+                {a.group && a.group !== rows[i - 1]?.group && (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="label border-y-2 border-ink/15 px-5 py-2"
+                      style={{ background: "var(--mist)" }}
+                    >
+                      {a.group}
+                    </td>
+                  </tr>
+                )}
+                <tr className="border-b-2 border-ink/10 transition-colors last:border-b-0 hover:bg-mist/40">
                 <td className="px-5 py-4">
                   <AssetCell asset={a} />
                 </td>
@@ -150,7 +160,8 @@ export function Markets() {
                     </td>
                   </>
                 )}
-              </tr>
+                </tr>
+              </Fragment>
             ))}
           </tbody>
         </table>

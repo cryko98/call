@@ -5,6 +5,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Connection, PublicKey, VersionedTransaction } from "@solana/web3.js";
 import type { MarketAsset } from "@/lib/market";
+import { TOKEN_GROUPS } from "@/lib/tokens";
 import { num, usd } from "@/lib/format";
 import { useMarket } from "./market-context";
 import { USING_PUBLIC_RPC } from "./wallet-provider";
@@ -111,6 +112,7 @@ function TokenSelect({
   onChange: (mint: string) => void;
 }) {
   const selected = assets.find((a) => a.mint === value);
+  const selectable = assets.filter((a) => a.mint !== exclude && a.decimals !== null);
 
   return (
     <label className="block">
@@ -130,13 +132,25 @@ function TokenSelect({
           onChange={(e) => onChange(e.target.value)}
           className="w-full cursor-pointer appearance-none bg-transparent py-3 pr-3 text-[15px] font-extrabold outline-none"
         >
-          {assets
-            .filter((a) => a.mint !== exclude && a.decimals !== null)
-            .map((a) => (
-              <option key={a.mint} value={a.mint}>
-                {a.symbol} — {a.name}
-              </option>
-            ))}
+          {/* Ungrouped first (crypto collateral and USDC), then by sector. */}
+          {selectable.filter((a) => !a.group).map((a) => (
+            <option key={a.mint} value={a.mint}>
+              {a.symbol} — {a.name}
+            </option>
+          ))}
+          {TOKEN_GROUPS.map((group) => {
+            const inGroup = selectable.filter((a) => a.group === group);
+            if (!inGroup.length) return null;
+            return (
+              <optgroup key={group} label={group}>
+                {inGroup.map((a) => (
+                  <option key={a.mint} value={a.mint}>
+                    {a.symbol} — {a.name}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
         </select>
       </div>
     </label>
