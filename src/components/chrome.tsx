@@ -2,27 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { BRAND, SOCIALS } from "@/lib/data";
+import { PixelCloud } from "./pixel-art";
 
 /* ------------------------------------------------------------------ */
 /* Logo                                                                */
 /* ------------------------------------------------------------------ */
 
-export function Logo({ size = 26 }: { size?: number }) {
+export function Logo({ size = 34 }: { size?: number }) {
   return (
-    <span
-      className="grid shrink-0 place-items-center border font-bold"
-      style={{
-        width: size,
-        height: size,
-        borderColor: "var(--amber)",
-        color: "var(--amber)",
-        fontSize: size * 0.5,
-        boxShadow: "inset 0 0 14px rgba(255,176,0,0.18)",
-      }}
-      aria-hidden="true"
-    >
-      M
-    </span>
+    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" className="shrink-0">
+      <circle cx="20" cy="20" r="18" fill="var(--lemon)" stroke="var(--ink)" strokeWidth="3" />
+      {/* a falling candle — the margin call itself */}
+      <path
+        d="M14 11v18M26 15v14"
+        stroke="var(--ink)"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <rect x="10" y="16" width="8" height="9" rx="2" fill="var(--coral)" stroke="var(--ink)" strokeWidth="3" />
+      <rect x="22" y="19" width="8" height="7" rx="2" fill="var(--paper)" stroke="var(--ink)" strokeWidth="3" />
+    </svg>
   );
 }
 
@@ -36,7 +35,6 @@ const NAV_LINKS = [
   { href: "#swap", label: "Swap" },
   { href: "#markets", label: "Markets" },
   { href: "#token", label: "$CALL" },
-  { href: "#roadmap", label: "Roadmap" },
   { href: "#faq", label: "FAQ" },
 ];
 
@@ -52,19 +50,14 @@ export function Nav() {
   }, []);
 
   return (
-    <header
-      className="sticky z-50 transition-colors duration-300"
-      style={{
-        top: "var(--tape-h, 34px)",
-        background: scrolled ? "rgba(6, 8, 10, 0.88)" : "rgba(6, 8, 10, 0.4)",
-        backdropFilter: "blur(12px)",
-        borderBottom: `1px solid ${scrolled ? "var(--line)" : "transparent"}`,
-      }}
-    >
-      <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5 sm:px-6">
+    <header className="sticky top-[42px] z-50 px-4 pt-4 sm:px-6">
+      <nav
+        className="pop mx-auto flex max-w-6xl items-center justify-between py-2.5 pr-2.5 pl-4 transition-shadow"
+        style={{ boxShadow: scrolled ? "6px 6px 0 var(--ink)" : "4px 4px 0 var(--ink)" }}
+      >
         <a href="#top" className="flex items-center gap-2.5" aria-label={`${BRAND.name} home`}>
           <Logo />
-          <span className="text-[14px] font-bold tracking-[0.04em]">MARGIN CALL</span>
+          <span className="text-[17px] font-extrabold tracking-[-0.03em]">Margin Call</span>
         </a>
 
         <ul className="hidden items-center gap-6 lg:flex">
@@ -72,7 +65,7 @@ export function Nav() {
             <li key={l.href}>
               <a
                 href={l.href}
-                className="text-[11.5px] tracking-[0.06em] text-muted uppercase transition-colors hover:text-amber"
+                className="text-[14.5px] font-semibold transition-colors hover:text-orange"
               >
                 {l.label}
               </a>
@@ -80,26 +73,22 @@ export function Nav() {
           ))}
         </ul>
 
-        <div className="flex items-center gap-2.5">
-          <a
-            href="#swap"
-            className="hidden border px-4 py-2 text-[11px] font-semibold tracking-[0.1em] transition-colors sm:block"
-            style={{ borderColor: "var(--amber)", color: "var(--amber)" }}
-          >
-            OPEN SWAP
+        <div className="flex items-center gap-2">
+          <a href="#swap" className="btn btn-primary hidden !px-5 !py-2.5 !text-[14px] sm:inline-flex">
+            Trade now
           </a>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label="Toggle menu"
             aria-expanded={open}
-            className="border border-line p-2 lg:hidden"
+            className="pop-flat !rounded-full p-2.5 lg:hidden"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               {open ? (
-                <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M4 4l10 10M14 4L4 14" stroke="var(--ink)" strokeWidth="2.6" strokeLinecap="round" />
               ) : (
-                <path d="M2 4.5h12M2 11.5h12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M2 5h14M2 13h14" stroke="var(--ink)" strokeWidth="2.6" strokeLinecap="round" />
               )}
             </svg>
           </button>
@@ -107,14 +96,14 @@ export function Nav() {
       </nav>
 
       {open && (
-        <div className="border-t border-line bg-panel px-5 py-2 lg:hidden">
+        <div className="pop mx-auto mt-2 max-w-6xl overflow-hidden lg:hidden">
           <ul className="flex flex-col">
             {NAV_LINKS.map((l) => (
-              <li key={l.href}>
+              <li key={l.href} className="border-b-2 border-ink/10 last:border-b-0">
                 <a
                   href={l.href}
                   onClick={() => setOpen(false)}
-                  className="block border-b border-line-soft py-3 text-[12.5px] tracking-[0.06em] text-muted uppercase transition-colors last:border-b-0 hover:text-amber"
+                  className="block px-5 py-3.5 text-[15px] font-bold"
                 >
                   {l.label}
                 </a>
@@ -130,8 +119,6 @@ export function Nav() {
 /* ------------------------------------------------------------------ */
 /* Contract address                                                    */
 /* ------------------------------------------------------------------ */
-
-const NOT_DEPLOYED = "Not yet deployed — address published at launch";
 
 export function ContractBar() {
   const [copied, setCopied] = useState(false);
@@ -149,23 +136,23 @@ export function ContractBar() {
   }
 
   return (
-    <div className="panel flex max-w-xl items-stretch text-[11.5px]">
-      <span className="label shrink-0 border-r border-line bg-panel-2 px-3.5 py-3">CA</span>
+    <div className="pop flex max-w-lg items-center gap-3 py-2 pr-2 pl-4">
+      <span className="label shrink-0">CA</span>
       <span
-        className="min-w-0 flex-1 truncate px-3.5 py-3"
-        style={{ color: hasAddress ? "var(--text)" : "var(--dim)" }}
+        className="min-w-0 flex-1 truncate text-[13.5px] font-semibold"
+        style={{ color: hasAddress ? "var(--ink)" : "var(--ink-faint)" }}
       >
-        {hasAddress ? BRAND.contract : NOT_DEPLOYED}
+        {hasAddress ? BRAND.contract : "Not deployed yet"}
       </span>
       <button
         type="button"
         onClick={copy}
         disabled={!hasAddress}
         aria-label="Copy contract address"
-        className="shrink-0 border-l border-line bg-panel-2 px-4 py-3 tracking-[0.1em] transition-colors enabled:hover:bg-amber enabled:hover:text-bg disabled:cursor-not-allowed"
-        style={{ color: hasAddress ? "var(--amber)" : "var(--dim)" }}
+        className="btn !px-4 !py-1.5 !text-[13px] !shadow-none"
+        style={{ background: copied ? "var(--lime)" : "var(--mist)" }}
       >
-        {copied ? "COPIED" : "COPY"}
+        {copied ? "Copied!" : "Copy"}
       </button>
     </div>
   );
@@ -177,52 +164,56 @@ export function ContractBar() {
 
 export function Footer() {
   return (
-    <footer className="border-t border-line bg-bg">
-      <div className="mx-auto max-w-6xl px-5 py-12 sm:px-6">
-        <div className="flex flex-wrap justify-between gap-8">
+    <footer className="band-edge band-peri relative overflow-hidden px-4 pt-16 pb-10 sm:px-6">
+      <PixelCloud
+        size={150}
+        className="absolute -top-2 right-6 text-white/70"
+        style={{ transform: "scaleX(-1)" }}
+      />
+
+      <div className="relative mx-auto max-w-6xl">
+        <div className="flex flex-wrap items-start justify-between gap-8">
           <div>
             <div className="flex items-center gap-2.5">
               <Logo />
-              <span className="text-[14px] font-bold tracking-[0.04em]">MARGIN CALL</span>
+              <span className="text-[19px] font-extrabold tracking-[-0.03em]">Margin Call</span>
             </div>
-            <p className="mt-3 max-w-xs text-[12px] leading-relaxed text-muted">
-              Borrow against your crypto. Buy tokenized equities. Settled on Solana.
+            <p className="mt-3 max-w-xs text-[14.5px] font-medium text-ink-soft">
+              Borrow against your crypto. Buy tokenized stocks. All on Solana.
             </p>
+            <div className="mt-5">
+              <ContractBar />
+            </div>
           </div>
 
-          <div className="flex h-fit flex-wrap gap-2">
+          <div className="flex h-fit flex-wrap gap-2.5">
             {SOCIALS.map((s) => (
-              <a
-                key={s.label}
-                href={s.href}
-                className="border border-line px-4 py-2 text-[10.5px] tracking-[0.1em] text-muted uppercase transition-colors hover:border-amber hover:text-amber"
-              >
+              <a key={s.label} href={s.href} className="btn pop-hover !px-4 !py-2 !text-[13.5px]">
                 {s.label}
               </a>
             ))}
           </div>
         </div>
 
-        <div className="panel mt-10 p-5">
-          <p className="text-[11px] leading-[1.85] text-muted">
-            <strong style={{ color: "var(--neg)", letterSpacing: "0.1em" }}>RISK DISCLAIMER —</strong>{" "}
-            {BRAND.ticker} is a crypto-asset with no intrinsic value and no guarantee of value
-            retention. Nothing on this page is investment, financial, legal or tax advice, and no
-            part of it constitutes an offer or solicitation to buy any asset. Borrowing against
-            volatile collateral carries liquidation risk: you can lose your entire deposit. Smart
-            contracts may contain vulnerabilities, and the protocol described here is pre-launch and
-            unaudited. All prices, rates and yields displayed on this site are simulated
-            placeholders, not live market data. Tokenized equities are issued by independent third
-            parties and are unavailable in several jurisdictions. Never commit capital you cannot
+        <div className="pop mt-10 bg-white/80 p-5">
+          <p className="text-[12.5px] leading-relaxed font-medium text-ink-soft">
+            <strong className="text-neg">Risk disclaimer —</strong> {BRAND.ticker} is a crypto-asset
+            with no intrinsic value and no guarantee of value retention. Nothing here is investment,
+            financial, legal or tax advice, and no part of it is an offer to buy any asset.
+            Borrowing against volatile collateral carries liquidation risk: you can lose your entire
+            deposit. Smart contracts may contain vulnerabilities, and the protocol described here is
+            pre-launch and unaudited. Tokenized equities are issued by independent third parties and
+            are unavailable in several jurisdictions, including the United States. Swaps executed on
+            this page are real, irreversible mainnet transactions. Never commit capital you cannot
             afford to lose entirely, and do your own research.
           </p>
         </div>
 
-        <div className="mt-7 flex flex-col gap-2.5 text-[10.5px] tracking-[0.06em] text-dim uppercase sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} Margin Call · All rights reserved</span>
-          <span>
-            Solana mainnet-beta ·{" "}
-            <span style={{ color: "var(--pos)" }}>● System nominal</span>
+        <div className="mt-7 flex flex-col gap-2 text-[13px] font-semibold text-ink-soft sm:flex-row sm:items-center sm:justify-between">
+          <span>© {new Date().getFullYear()} Margin Call</span>
+          <span className="flex items-center gap-2">
+            <span className="blink h-2 w-2 rounded-full" style={{ background: "var(--pos)" }} />
+            Live on Solana mainnet
           </span>
         </div>
       </div>

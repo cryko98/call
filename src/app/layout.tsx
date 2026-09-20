@@ -1,12 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono } from "next/font/google";
+import { Caveat, Outfit } from "next/font/google";
 import "./globals.css";
 import { BRAND } from "@/lib/data";
 
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
+});
+
+/** Used only for the hand-drawn marginalia. */
+const caveat = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin"],
+  weight: ["600", "700"],
   display: "swap",
 });
 
@@ -45,16 +53,16 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#06080a",
-  colorScheme: "dark",
+  themeColor: "#bcc8fb",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={plexMono.variable}>
-      <body className="scanlines">{children}</body>
+    <html lang="en" className={`${outfit.variable} ${caveat.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }

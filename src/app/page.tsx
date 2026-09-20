@@ -5,6 +5,7 @@ import { Markets } from "@/components/markets";
 import { MarketProvider } from "@/components/market-context";
 import { SolanaProviders } from "@/components/wallet-provider";
 import { SwapPanel } from "@/components/swap-panel";
+import { Mascot, Sparkle } from "@/components/pixel-art";
 import {
   Architecture,
   ClosingCta,
@@ -29,37 +30,43 @@ export const revalidate = 60;
  */
 function LendingNotice() {
   return (
-    <div
-      className="mt-6 border p-5"
-      style={{ borderColor: "var(--amber)", background: "rgba(255,176,0,0.04)" }}
-    >
-      <h3 className="text-[13px] font-semibold" style={{ color: "var(--amber)" }}>
-        Deposit and borrow are not live yet
-      </h3>
-      <p className="mt-2 max-w-3xl text-[12px] leading-relaxed text-muted">
-        The Margin Call lending program has not been deployed to devnet or mainnet, so there is
-        nothing on-chain to deposit into. The calculator above models a position against live
-        prices and live Kamino parameters, but it cannot open one. What you{" "}
-        <em>can</em> do on this page today is swap — through Jupiter, signed by your own wallet,
-        settling on mainnet.{" "}
-        <a href="#swap" className="underline" style={{ color: "var(--amber)" }}>
-          Jump to the swap panel ↓
+    <div className="pop mt-7 flex flex-wrap items-start gap-5 p-6" style={{ background: "var(--gold)" }}>
+      <span
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-[2.5px] border-ink bg-white text-[21px] font-black"
+        aria-hidden="true"
+      >
+        !
+      </span>
+      <div className="min-w-[260px] flex-1">
+        <h3 className="text-[19px] font-extrabold tracking-[-0.03em]">
+          Deposit and borrow aren&apos;t live yet
+        </h3>
+        <p className="mt-2 max-w-3xl text-[14.5px] leading-relaxed font-medium text-ink/75">
+          The Margin Call lending program has not been deployed to devnet or mainnet, so there is
+          nothing on-chain to deposit into. The calculator above models a position against live
+          prices and live Kamino parameters, but it cannot open one. What you <em>can</em> do on
+          this page today is swap — through Jupiter, signed by your own wallet, settling on
+          mainnet.
+        </p>
+        <a href="#swap" className="btn mt-4 !py-2.5 !text-[14px]">
+          Go to the swap ↓
         </a>
-      </p>
+      </div>
     </div>
   );
 }
 
 function CalculatorSection() {
   return (
-    <section id="borrow" className="scroll-mt-24 border-t border-line py-18 sm:py-24">
-      <div className="mx-auto max-w-6xl px-5 sm:px-6">
+    <section id="borrow" className="band-edge band-paper scroll-mt-28 px-4 py-16 sm:px-6 sm:py-20">
+      <div className="mx-auto max-w-6xl">
         <SectionHead
-          tag="// 03 — Position builder"
+          tag="Calculator"
           title="See your borrowing power."
-          sub="Live prices and live lending parameters. Adjust collateral and leverage to model borrowing capacity, liquidation price and carry cost before you commit capital."
+          note="live numbers"
+          sub="Adjust collateral and leverage to model borrowing capacity, liquidation price and carry cost before you commit capital."
         />
-        <div className="mt-9">
+        <div className="mt-10">
           <BorrowCalculator />
         </div>
         <LendingNotice />
@@ -70,15 +77,23 @@ function CalculatorSection() {
 
 function SwapSection() {
   return (
-    <section className="scroll-mt-24 border-t border-line py-18 sm:py-24">
-      <div className="mx-auto max-w-6xl px-5 sm:px-6">
+    <section className="band-edge band-peri scroll-mt-28 px-4 py-16 sm:px-6 sm:py-20">
+      <div className="mx-auto max-w-6xl">
         <SectionHead
-          tag="// 04 — Execute"
-          title="Trade it, here."
-          sub="Connect a wallet and swap between crypto and tokenized equities without leaving the page. Routes and prices come from Jupiter; your wallet signs the transaction and it settles on Solana mainnet."
+          tag="Trade"
+          title="Trade it, right here."
+          sub="Connect a wallet and swap between crypto and tokenized stocks without leaving the page. Routes and prices come from Jupiter; your wallet signs the transaction and it settles on Solana mainnet."
         />
-        <div className="mt-9 max-w-2xl">
+        <div className="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_260px]">
           <SwapPanel />
+
+          <aside className="relative hidden lg:block">
+            <Sparkle size={26} className="absolute top-6 left-0" />
+            <Mascot size={210} className="bob mx-auto" />
+            <p className="hand mt-2 rotate-3 text-center text-[21px] font-bold text-ink/60">
+              your keys, your call
+            </p>
+          </aside>
         </div>
       </div>
     </section>
@@ -87,14 +102,14 @@ function SwapSection() {
 
 function MarketsSection() {
   return (
-    <section id="markets" className="scroll-mt-24 border-t border-line py-18 sm:py-24">
-      <div className="mx-auto max-w-6xl px-5 sm:px-6">
+    <section id="markets" className="band-edge band-paper scroll-mt-28 px-4 py-16 sm:px-6 sm:py-20">
+      <div className="mx-auto max-w-6xl">
         <SectionHead
-          tag="// 05 — Markets"
-          title="Crypto collateral. Equity exposure."
+          tag="Markets"
+          title="Crypto in. Stocks out."
           sub="Blue-chip crypto on the supply side, real tokenized equities on the borrow side — both trading on Solana today, priced from the same routes a swap would take."
         />
-        <div className="mt-9">
+        <div className="mt-10">
           <Markets />
         </div>
       </div>

@@ -8,6 +8,7 @@ import {
   TOKENOMICS,
   type RoadmapStatus,
 } from "@/lib/data";
+import { HandArrow, PixelCloud, PixelCoin, Sparkle } from "./pixel-art";
 
 /* ------------------------------------------------------------------ */
 /* Shared section shell                                                */
@@ -17,20 +18,30 @@ export function SectionHead({
   tag,
   title,
   sub,
+  note,
 }: {
   tag: string;
   title: React.ReactNode;
   sub?: string;
+  /** Hand-written marginalia set beside the heading. */
+  note?: string;
 }) {
   return (
     <div className="max-w-2xl">
-      <span className="label" style={{ color: "var(--amber)" }}>
+      <span className="pill" style={{ background: "var(--lemon)" }}>
         {tag}
       </span>
-      <h2 className="mt-3 text-[26px] leading-[1.15] font-bold tracking-[-0.02em] sm:text-[36px]">
+      <h2 className="mt-4 text-[32px] leading-[1.02] font-black tracking-[-0.04em] sm:text-[44px]">
         {title}
+        {note ? (
+          <span className="hand ml-3 inline-block -rotate-3 align-middle text-[22px] font-bold text-ink/50">
+            {note}
+          </span>
+        ) : null}
       </h2>
-      {sub ? <p className="mt-3 text-[13px] leading-[1.8] text-muted">{sub}</p> : null}
+      {sub ? (
+        <p className="mt-4 text-[16px] leading-relaxed font-medium text-ink/70">{sub}</p>
+      ) : null}
     </div>
   );
 }
@@ -38,18 +49,15 @@ export function SectionHead({
 function Section({
   id,
   children,
-  bordered = true,
+  band = "band-paper",
 }: {
   id?: string;
   children: React.ReactNode;
-  bordered?: boolean;
+  band?: string;
 }) {
   return (
-    <section
-      id={id}
-      className={`scroll-mt-24 py-18 sm:py-24 ${bordered ? "border-t border-line" : ""}`}
-    >
-      <div className="mx-auto max-w-6xl px-5 sm:px-6">{children}</div>
+    <section id={id} className={`band-edge ${band} scroll-mt-28 px-4 py-16 sm:px-6 sm:py-20`}>
+      <div className="mx-auto max-w-6xl">{children}</div>
     </section>
   );
 }
@@ -58,25 +66,29 @@ function Section({
 /* How it works                                                        */
 /* ------------------------------------------------------------------ */
 
+const STEP_TINTS = ["var(--coral)", "var(--lime)", "var(--gold)"];
+
 export function HowItWorks() {
   return (
-    <Section id="how">
+    <Section id="how" band="band-peri">
       <SectionHead
-        tag="// 01 — Mechanics"
-        title="Three steps. No intermediary."
+        tag="How it works"
+        title="Three steps."
+        note="that's it"
         sub="Every position is an on-chain account you control. No custodian holds your keys and no broker approves your trade."
       />
-      <div className="panel mt-9 grid lg:grid-cols-3">
-        {STEPS.map((s) => (
+      <div className="mt-10 grid gap-5 lg:grid-cols-3">
+        {STEPS.map((s, i) => (
           <div
             key={s.n}
-            className="panel-hover border-b border-line p-7 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0"
+            className="pop pop-hover p-6"
+            style={{ background: STEP_TINTS[i % STEP_TINTS.length] }}
           >
-            <div className="label" style={{ color: "var(--amber)" }}>
-              Step {s.n}
-            </div>
-            <h3 className="mt-4 text-[15px] font-semibold">{s.title}</h3>
-            <p className="mt-2.5 text-[12.5px] leading-[1.8] text-muted">{s.body}</p>
+            <span className="grid h-11 w-11 place-items-center rounded-full border-[2.5px] border-ink bg-white text-[17px] font-black">
+              {s.n}
+            </span>
+            <h3 className="mt-4 text-[21px] font-extrabold tracking-[-0.03em]">{s.title}</h3>
+            <p className="mt-2 text-[14.5px] leading-relaxed font-medium text-ink/75">{s.body}</p>
           </div>
         ))}
       </div>
@@ -92,18 +104,23 @@ export function Architecture() {
   return (
     <Section>
       <SectionHead
-        tag="// 02 — Risk engine"
+        tag="Risk engine"
         title="Boring where it matters."
         sub="Lending protocols fail in predictable ways: bad oracles, shared bad debt, and liquidations that punish more than they need to. Each of those has a specific answer here."
       />
-      <div className="mt-9 grid gap-px bg-line sm:grid-cols-2">
-        {PILLARS.map((p) => (
-          <div key={p.title} className="panel-hover bg-panel p-7">
-            <div className="flex items-center gap-2.5">
-              <span className="h-2 w-2 shrink-0" style={{ background: p.tint }} aria-hidden="true" />
-              <h3 className="text-[14.5px] font-semibold">{p.title}</h3>
+      <div className="mt-10 grid gap-5 sm:grid-cols-2">
+        {PILLARS.map((p, i) => (
+          <div key={p.title} className="pop pop-hover p-6" style={{ background: "var(--mist)" }}>
+            <div className="flex items-center gap-3">
+              <span
+                className="h-5 w-5 shrink-0 rounded-md border-[2.5px] border-ink"
+                style={{ background: p.tint }}
+                aria-hidden="true"
+              />
+              <h3 className="text-[19px] font-extrabold tracking-[-0.03em]">{p.title}</h3>
+              {i === 0 && <Sparkle size={20} className="ml-auto" />}
             </div>
-            <p className="mt-3 text-[12.5px] leading-[1.8] text-muted">{p.body}</p>
+            <p className="mt-3 text-[14.5px] leading-relaxed font-medium text-ink/75">{p.body}</p>
           </div>
         ))}
       </div>
@@ -117,60 +134,72 @@ export function Architecture() {
 
 export function Tokenomics() {
   return (
-    <Section id="token">
-      <SectionHead
-        tag="// 06 — The token"
-        title="$CALL"
-        sub="A fixed-supply SPL token. Protocol fees route to stakers, and governance controls collateral onboarding and risk parameters. The token is not minted yet, so this section is the launch plan — there is no price or market data to show."
-      />
+    <Section id="token" band="band-orange">
+      <div className="relative">
+        <PixelCoin size={42} className="bob absolute -top-4 right-2 hidden sm:block" />
+        <SectionHead
+          tag="The token"
+          title="$CALL"
+          sub="A fixed-supply SPL token. Protocol fees route to stakers, and governance controls collateral onboarding and risk parameters. The token is not minted yet, so this is the launch plan — there is no price or market data to show."
+        />
+      </div>
 
-      <div className="panel mt-9 grid lg:grid-cols-2">
-        <div className="border-b border-line p-7 lg:border-b-0 lg:border-r">
-          <div className="label">Supply distribution — 1,000,000,000 $CALL</div>
-          <div className="mt-6 flex flex-col gap-5">
+      <div className="mt-10 grid gap-5 lg:grid-cols-2">
+        <div className="pop p-6 sm:p-7">
+          <div className="label">Supply — 1,000,000,000 $CALL</div>
+          <div className="mt-5 flex flex-col gap-4">
             {TOKENOMICS.map((t) => (
               <div key={t.label}>
-                <div className="flex items-baseline justify-between gap-4 text-[12.5px]">
-                  <span>
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="text-[14.5px] font-bold">
                     {t.label}
-                    {t.sub ? <span className="ml-2 text-[11px] text-dim">· {t.sub}</span> : null}
+                    {t.sub ? (
+                      <span className="ml-2 text-[12.5px] font-semibold text-ink/45">{t.sub}</span>
+                    ) : null}
                   </span>
-                  <b className="font-semibold">{t.pct}%</b>
+                  <b className="text-[16px] font-extrabold">{t.pct}%</b>
                 </div>
-                <div className="mt-2 h-1 bg-line">
-                  <div className="h-full" style={{ width: `${t.pct}%`, background: t.tint }} />
+                <div className="mt-1.5 h-4 overflow-hidden rounded-full border-[2.5px] border-ink bg-white">
+                  <div
+                    className="h-full"
+                    style={{ width: `${t.pct}%`, background: t.tint }}
+                  />
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-8 border-t border-line pt-6">
+          <div className="mt-7 border-t-[3px] border-ink pt-5">
             <div className="label">What it does</div>
-            <div className="mt-4 flex flex-col gap-4">
+            <div className="mt-3 flex flex-col gap-3.5">
               {TOKEN_UTILITY.map((u) => (
                 <div key={u.title}>
-                  <h4 className="text-[12.5px] font-semibold">{u.title}</h4>
-                  <p className="mt-1 text-[11.5px] leading-relaxed text-muted">{u.body}</p>
+                  <h4 className="text-[15px] font-extrabold">{u.title}</h4>
+                  <p className="mt-0.5 text-[13.5px] leading-snug font-medium text-ink/70">
+                    {u.body}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="bg-panel-2 p-7">
+        <div className="pop p-6 sm:p-7" style={{ background: "var(--lemon)" }}>
           <div className="label">Safety guarantees</div>
-          <ul className="mt-4">
+          <ul className="mt-4 flex flex-col gap-3.5">
             {GUARANTEES.map((g) => (
-              <li
-                key={g.title}
-                className="flex gap-3 border-b border-line-soft py-3.5 last:border-b-0"
-              >
-                <span className="shrink-0 font-bold" style={{ color: "var(--pos)" }} aria-hidden="true">
+              <li key={g.title} className="flex gap-3">
+                <span
+                  className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border-[2.5px] border-ink bg-white text-[13px] font-black"
+                  aria-hidden="true"
+                >
                   ✓
                 </span>
                 <div>
-                  <h4 className="text-[12.5px] font-semibold">{g.title}</h4>
-                  <p className="mt-1 text-[11.5px] leading-relaxed text-muted">{g.body}</p>
+                  <h4 className="text-[15px] font-extrabold">{g.title}</h4>
+                  <p className="mt-0.5 text-[13.5px] leading-snug font-medium text-ink/70">
+                    {g.body}
+                  </p>
                 </div>
               </li>
             ))}
@@ -186,51 +215,50 @@ export function Tokenomics() {
 /* ------------------------------------------------------------------ */
 
 const STATUS_LABEL: Record<RoadmapStatus, string> = {
-  done: "Complete",
+  done: "Done",
   active: "In progress",
   next: "Planned",
 };
 
-const STATUS_COLOR: Record<RoadmapStatus, string> = {
-  done: "var(--pos)",
-  active: "var(--amber)",
-  next: "var(--dim)",
+const STATUS_TINT: Record<RoadmapStatus, string> = {
+  done: "var(--lime)",
+  active: "var(--gold)",
+  next: "var(--paper)",
 };
 
 export function Roadmap() {
   return (
-    <Section id="roadmap">
+    <Section id="roadmap" band="band-sky">
       <SectionHead
-        tag="// 07 — Roadmap"
+        tag="Roadmap"
         title="Shipping order."
-        sub="Dates are targets, not promises. Scope moves before deadlines do."
+        note="dates are targets"
+        sub="Scope moves before deadlines do."
       />
-      <div className="panel mt-9">
+      <div className="mt-10 grid gap-5 sm:grid-cols-2">
         {ROADMAP.map((p) => (
-          <div key={p.phase} className="grid border-b border-line last:border-b-0 lg:grid-cols-[190px_1fr]">
-            <div className="flex items-baseline gap-3 border-b border-line bg-panel-2 px-6 py-4 lg:flex-col lg:gap-1.5 lg:border-r lg:border-b-0 lg:py-6">
-              <div className="label" style={{ color: STATUS_COLOR[p.status] }}>
-                {p.phase}
-              </div>
-              <div className="label">{STATUS_LABEL[p.status]}</div>
+          <div
+            key={p.phase}
+            className="pop pop-hover p-6"
+            style={{ background: STATUS_TINT[p.status] }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="label">{p.phase}</span>
+              <span className="pill" style={{ background: "var(--paper)" }}>
+                {STATUS_LABEL[p.status]}
+              </span>
             </div>
-            <div className="px-6 py-6">
-              <h3 className="text-[15px] font-semibold">{p.title}</h3>
-              <ul className="mt-3 flex flex-col gap-1.5">
-                {p.items.map((it) => (
-                  <li key={it} className="flex gap-2.5 text-[12.5px] text-muted">
-                    <span
-                      className="shrink-0"
-                      style={{ color: p.status === "done" ? "var(--pos)" : "var(--line)" }}
-                      aria-hidden="true"
-                    >
-                      {p.status === "done" ? "✓" : "▸"}
-                    </span>
-                    {it}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <h3 className="mt-3 text-[21px] font-extrabold tracking-[-0.03em]">{p.title}</h3>
+            <ul className="mt-3 flex flex-col gap-2">
+              {p.items.map((it) => (
+                <li key={it} className="flex gap-2.5 text-[14px] font-medium text-ink/75">
+                  <span className="shrink-0 font-black" aria-hidden="true">
+                    {p.status === "done" ? "✓" : "→"}
+                  </span>
+                  {it}
+                </li>
+              ))}
+            </ul>
           </div>
         ))}
       </div>
@@ -245,21 +273,23 @@ export function Roadmap() {
 export function Faq() {
   return (
     <Section id="faq">
-      <SectionHead tag="// 08 — FAQ" title="Questions worth asking." />
-      <div className="panel mt-9">
+      <SectionHead tag="FAQ" title="Questions worth asking." />
+      <div className="mt-10 flex flex-col gap-4">
         {FAQ.map((f, i) => (
-          <details key={f.q} open={i === 0} className="group border-b border-line last:border-b-0">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-6 py-4.5 text-[13.5px] font-medium transition-colors hover:text-amber [&::-webkit-details-marker]:hidden">
+          <details key={f.q} open={i === 0} className="pop group overflow-hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-6 py-5 text-[17px] font-extrabold tracking-[-0.02em] [&::-webkit-details-marker]:hidden">
               {f.q}
               <span
-                className="shrink-0 text-[17px] transition-transform group-open:rotate-45"
-                style={{ color: "var(--amber)" }}
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full border-[2.5px] border-ink text-[19px] font-black transition-transform group-open:rotate-45"
+                style={{ background: "var(--lemon)" }}
                 aria-hidden="true"
               >
                 +
               </span>
             </summary>
-            <p className="max-w-3xl px-6 pb-5 text-[12.5px] leading-[1.85] text-muted">{f.a}</p>
+            <p className="border-t-2 border-ink/10 px-6 py-5 text-[14.5px] leading-relaxed font-medium text-ink/75">
+              {f.a}
+            </p>
           </details>
         ))}
       </div>
@@ -273,32 +303,40 @@ export function Faq() {
 
 export function ClosingCta() {
   return (
-    <div className="border-t border-line bg-panel py-16 text-center sm:py-20">
-      <div className="mx-auto max-w-6xl px-5 sm:px-6">
-        <h2 className="text-[26px] leading-[1.2] font-bold tracking-[-0.02em] sm:text-[34px]">
+    <section className="sunburst band-edge band-orange relative overflow-hidden px-4 py-20 text-center sm:px-6">
+      <PixelCloud size={120} className="absolute top-6 left-6 text-white/45" />
+      <PixelCloud size={90} className="absolute right-8 bottom-8 text-white/35" />
+      <Sparkle size={30} className="absolute top-14 right-[18%] hidden sm:block" />
+      <HandArrow
+        size={70}
+        className="absolute bottom-16 left-[14%] hidden -rotate-12 text-ink/30 lg:block"
+      />
+
+      <div className="relative mx-auto max-w-3xl">
+        <h2 className="text-[36px] leading-[1.02] font-black tracking-[-0.04em] sm:text-[52px]">
           Your collateral is already working.
           <br />
-          <span style={{ color: "var(--amber)" }}>Make it work twice.</span>
+          <span className="relative inline-block">
+            <span
+              className="absolute inset-x-[-12px] inset-y-[3px] rotate-1 rounded-xl border-[3px] border-ink"
+              style={{ background: "var(--lemon)" }}
+              aria-hidden="true"
+            />
+            <span className="relative">Make it work twice.</span>
+          </span>
         </h2>
-        <p className="mx-auto mt-4 max-w-md text-[13px] leading-relaxed text-muted">
-          Join the community before the token generation event.
+        <p className="mx-auto mt-6 max-w-md text-[16.5px] font-semibold text-ink/75">
+          Swap into tokenized stocks right here, or model a loan before you commit.
         </p>
-        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-          <a
-            href="#borrow"
-            className="px-6 py-3.5 text-[12px] font-semibold tracking-[0.11em] transition-opacity hover:opacity-90"
-            style={{ background: "var(--amber)", color: "var(--bg)" }}
-          >
-            MODEL A POSITION
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <a href="#swap" className="btn btn-primary !text-[17px]">
+            Trade now
           </a>
-          <a
-            href="#"
-            className="border border-line bg-bg px-6 py-3.5 text-[12px] font-semibold tracking-[0.11em] transition-colors hover:border-muted"
-          >
-            JOIN TELEGRAM
+          <a href="#borrow" className="btn !text-[17px]">
+            Run the numbers
           </a>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

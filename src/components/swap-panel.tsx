@@ -5,7 +5,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Connection, PublicKey, VersionedTransaction } from "@solana/web3.js";
 import type { MarketAsset } from "@/lib/market";
-import { autoUsd, num, usd } from "@/lib/format";
+import { num, usd } from "@/lib/format";
 import { useMarket } from "./market-context";
 import { USING_PUBLIC_RPC } from "./wallet-provider";
 
@@ -110,22 +110,35 @@ function TokenSelect({
   exclude: string;
   onChange: (mint: string) => void;
 }) {
+  const selected = assets.find((a) => a.mint === value);
+
   return (
     <label className="block">
       <span className="label">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-2 w-full appearance-none border border-line bg-bg px-3 py-2.5 text-[13px] outline-none focus:border-muted"
+      <div
+        className="pop-flat mt-2 flex items-center gap-2.5 overflow-hidden pl-3 !shadow-none"
+        style={{ background: selected?.tint ?? "var(--paper)" }}
       >
-        {assets
-          .filter((a) => a.mint !== exclude && a.decimals !== null)
-          .map((a) => (
-            <option key={a.mint} value={a.mint}>
-              {a.symbol} — {a.name}
-            </option>
-          ))}
-      </select>
+        <span
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border-2 border-ink bg-white text-[10.5px] font-extrabold"
+          aria-hidden="true"
+        >
+          {selected?.symbol.replace(/x$/, "").slice(0, 4) ?? "—"}
+        </span>
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full cursor-pointer appearance-none bg-transparent py-3 pr-3 text-[15px] font-extrabold outline-none"
+        >
+          {assets
+            .filter((a) => a.mint !== exclude && a.decimals !== null)
+            .map((a) => (
+              <option key={a.mint} value={a.mint}>
+                {a.symbol} — {a.name}
+              </option>
+            ))}
+        </select>
+      </div>
     </label>
   );
 }
@@ -139,14 +152,14 @@ export function SwapPanel() {
   const { connection } = useConnection();
   const { publicKey, sendTransaction, connected } = useWallet();
 
-  const assets = useMemo(
-    () => [...snapshot.collateral, ...snapshot.equities],
-    [snapshot],
-  );
+  const assets = useMemo(() => [...snapshot.collateral, ...snapshot.equities], [snapshot]);
 
   const [inputMint, setInputMint] = useState(SOL_MINT);
   const [outputMint, setOutputMint] = useState(
-    () => snapshot.equities.find((e) => e.symbol === "NVDAx")?.mint ?? snapshot.equities[0]?.mint ?? "",
+    () =>
+      snapshot.equities.find((e) => e.symbol === "NVDAx")?.mint ??
+      snapshot.equities[0]?.mint ??
+      "",
   );
   const [amount, setAmount] = useState("0.1");
   const [slippageBps, setSlippageBps] = useState(50);
@@ -160,8 +173,7 @@ export function SwapPanel() {
   const input = assets.find((a) => a.mint === inputMint);
   const output = assets.find((a) => a.mint === outputMint);
 
-  const baseAmount =
-    input?.decimals != null ? toBaseUnits(amount, input.decimals) : null;
+  const baseAmount = input?.decimals != null ? toBaseUnits(amount, input.decimals) : null;
 
   /* ---------------- balance ---------------- */
 
@@ -255,11 +267,7 @@ export function SwapPanel() {
 
       setStatus({ kind: "sending", signature });
       const result = await connection.confirmTransaction(
-        {
-          signature,
-          blockhash: transaction.message.recentBlockhash,
-          lastValidBlockHeight,
-        },
+        { signature, blockhash: transaction.message.recentBlockhash, lastValidBlockHeight },
         "confirmed",
       );
       if (result.value.err) {
@@ -273,7 +281,9 @@ export function SwapPanel() {
       const message = err instanceof Error ? err.message : "Swap failed";
       setStatus({
         kind: "error",
-        message: /user rejected|reject/i.test(message) ? "You rejected the request in your wallet." : message,
+        message: /user rejected|reject/i.test(message)
+          ? "You rejected the request in your wallet."
+          : message,
       });
     }
   }
@@ -287,14 +297,17 @@ export function SwapPanel() {
       ? fromBaseUnits(quote.otherAmountThreshold, output.decimals)
       : null;
   const impact = quote ? Number(quote.priceImpactPct) * 100 : null;
-  const route = quote?.routePlan?.map((p) => p.swapInfo?.label).filter(Boolean).join(" → ") ?? null;
+  const route =
+    quote?.routePlan?.map((p) => p.swapInfo?.label).filter(Boolean).join(" → ") ?? null;
 
-  const inUsd = input?.price != null && baseAmount !== null && input.decimals != null
-    ? fromBaseUnits(baseAmount.toString(), input.decimals) * input.price
-    : null;
+  const inUsd =
+    input?.price != null && baseAmount !== null && input.decimals != null
+      ? fromBaseUnits(baseAmount.toString(), input.decimals) * input.price
+      : null;
   const outUsd = output?.price != null && outUi != null ? outUi * output.price : null;
 
-  const busy = status.kind === "building" || status.kind === "signing" || status.kind === "sending";
+  const busy =
+    status.kind === "building" || status.kind === "signing" || status.kind === "sending";
   const overBalance =
     balance !== null && input?.decimals != null && baseAmount !== null
       ? fromBaseUnits(baseAmount.toString(), input.decimals) > balance
@@ -307,25 +320,30 @@ export function SwapPanel() {
   }
 
   return (
-    <div className="panel scroll-mt-28" id="swap">
+    <div className="pop-lg scroll-mt-28 overflow-hidden" id="swap">
       {/* header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-panel-2 px-6 py-4">
+      <div
+        className="flex flex-wrap items-center justify-between gap-3 border-b-[3px] border-ink px-6 py-5"
+        style={{ background: "var(--lemon)" }}
+      >
         <div>
-          <div className="label" style={{ color: "var(--amber)" }}>
-            Execute · real transaction
-          </div>
-          <h3 className="mt-1 text-[15px] font-semibold">Swap on Jupiter</h3>
+          <span className="pill" style={{ background: "var(--paper)" }}>
+            Real transaction
+          </span>
+          <h3 className="mt-2 text-[22px] font-extrabold tracking-[-0.03em]">Swap on Jupiter</h3>
         </div>
         <WalletMultiButton
           style={{
-            background: connected ? "var(--panel)" : "var(--amber)",
-            color: connected ? "var(--text)" : "var(--bg)",
-            border: `1px solid ${connected ? "var(--line)" : "var(--amber)"}`,
-            borderRadius: 0,
-            fontFamily: "var(--font-plex-mono)",
-            fontSize: 12,
-            height: 40,
-            letterSpacing: "0.06em",
+            background: connected ? "var(--paper)" : "var(--orange)",
+            color: "var(--ink)",
+            border: "2.5px solid var(--ink)",
+            borderRadius: 999,
+            boxShadow: "4px 4px 0 var(--ink)",
+            fontFamily: "var(--font-outfit)",
+            fontWeight: 800,
+            fontSize: 14.5,
+            height: 46,
+            padding: "0 22px",
           }}
         />
       </div>
@@ -340,7 +358,7 @@ export function SwapPanel() {
             onChange={setInputMint}
           />
           <TokenSelect
-            label="You receive"
+            label="You get"
             assets={assets}
             value={outputMint}
             exclude={inputMint}
@@ -349,19 +367,24 @@ export function SwapPanel() {
         </div>
 
         {/* amount */}
-        <div className="mt-4">
+        <div className="mt-5">
           <div className="flex items-baseline justify-between">
             <span className="label">Amount</span>
-            <span className="text-[11px] text-dim">
+            <span className="text-[12.5px] font-semibold text-ink/55">
               {balance === null ? (
-                connected ? "balance unavailable" : "connect to see balance"
+                connected ? (
+                  "balance unavailable"
+                ) : (
+                  "connect to see balance"
+                )
               ) : (
                 <>
                   Balance: {num(balance, 4)} {input?.symbol}
                   <button
                     type="button"
                     onClick={setMax}
-                    className="ml-2 border border-line px-1.5 py-0.5 text-[10px] transition-colors hover:border-amber hover:text-amber"
+                    className="ml-2 rounded-full border-2 border-ink px-2 py-0.5 text-[11px] font-extrabold"
+                    style={{ background: "var(--lemon)" }}
                   >
                     MAX
                   </button>
@@ -369,37 +392,38 @@ export function SwapPanel() {
               )}
             </span>
           </div>
-          <div className="mt-2 flex items-center border border-line bg-bg focus-within:border-muted">
+          <div className="pop-flat mt-2 flex items-center overflow-hidden !shadow-none">
             <input
               type="text"
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
-              className="w-full bg-transparent px-4 py-3 text-[19px] font-semibold outline-none"
+              className="w-full bg-transparent px-4 py-3.5 text-[24px] font-extrabold outline-none"
             />
-            <span className="shrink-0 border-l border-line px-4 py-3 text-[12px] text-muted">
+            <span className="shrink-0 border-l-[2.5px] border-ink px-4 py-3.5 text-[14px] font-extrabold">
               {input?.symbol}
             </span>
           </div>
-          <div className="mt-1.5 flex justify-between text-[11px] text-dim">
+          <div className="mt-1.5 flex justify-between text-[12.5px] font-semibold text-ink/55">
             <span>{inUsd !== null ? `≈ ${usd(inUsd)}` : ""}</span>
-            {overBalance && <span style={{ color: "var(--neg)" }}>Exceeds your balance</span>}
+            {overBalance && (
+              <span className="font-bold" style={{ color: "var(--neg)" }}>
+                More than you have
+              </span>
+            )}
           </div>
         </div>
 
         {/* slippage */}
-        <div className="mt-4 flex items-center gap-2">
-          <span className="label">Max slippage</span>
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <span className="label mr-1">Max slippage</span>
           {[10, 50, 100, 300].map((bps) => (
             <button
               key={bps}
               type="button"
               onClick={() => setSlippageBps(bps)}
-              className="border px-2.5 py-1 text-[11px] transition-colors"
-              style={{
-                borderColor: slippageBps === bps ? "var(--amber)" : "var(--line)",
-                color: slippageBps === bps ? "var(--amber)" : "var(--muted)",
-              }}
+              className="rounded-full border-[2.5px] border-ink px-3 py-1 text-[12.5px] font-extrabold"
+              style={{ background: slippageBps === bps ? "var(--lemon)" : "var(--paper)" }}
             >
               {bps / 100}%
             </button>
@@ -407,55 +431,49 @@ export function SwapPanel() {
         </div>
 
         {/* quote */}
-        <div className="mt-5 border border-line bg-bg p-4">
+        <div className="pop-flat mt-5 p-4 !shadow-none" style={{ background: "var(--mist)" }}>
           {quoteError ? (
-            <p className="text-[12px]" style={{ color: "var(--neg)" }}>
+            <p className="text-[13px] font-bold" style={{ color: "var(--neg)" }}>
               {quoteError}
             </p>
           ) : !quote ? (
-            <p className="text-[12px] text-dim">
-              {quoting ? "Fetching route…" : "Enter an amount to see a live route."}
+            <p className="text-[13px] font-semibold text-ink/55">
+              {quoting ? "Finding the best route…" : "Enter an amount to see a live route."}
             </p>
           ) : (
             <>
-              <div className="flex items-baseline justify-between">
-                <span className="label">You receive</span>
-                <span className="text-[11px] text-dim">{quoting ? "refreshing…" : route}</span>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="label">You get</span>
+                <span className="text-[12px] font-bold text-ink/50">
+                  {quoting ? "refreshing…" : route}
+                </span>
               </div>
-              <div className="mt-1.5 text-[26px] font-bold" style={{ color: "var(--pos)" }}>
+              <div className="mt-1.5 text-[32px] font-black tracking-[-0.035em]">
                 {outUi !== null ? num(outUi, outUi >= 1000 ? 2 : 6) : "—"}{" "}
-                <span className="text-[16px] text-muted">{output?.symbol}</span>
+                <span className="text-[18px] font-extrabold text-ink/50">{output?.symbol}</span>
               </div>
               {outUsd !== null && (
-                <div className="mt-1 text-[11.5px] text-muted">≈ {usd(outUsd)}</div>
+                <div className="mt-1 text-[13px] font-bold text-ink/55">≈ {usd(outUsd)}</div>
               )}
 
-              <div className="mt-3 flex flex-col gap-1.5 border-t border-line pt-3 text-[11.5px]">
+              <div className="mt-3 flex flex-col gap-2 border-t-2 border-ink/15 pt-3 text-[13px] font-semibold">
                 <div className="flex justify-between">
-                  <span className="text-muted">Minimum received</span>
-                  <span>
+                  <span className="text-ink/55">You get at least</span>
+                  <span className="font-bold">
                     {minOutUi !== null ? num(minOutUi, 6) : "—"} {output?.symbol}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted">Price impact</span>
+                  <span className="text-ink/55">Price impact</span>
                   <span
+                    className="font-bold"
                     style={{
-                      color:
-                        impact === null ? undefined : impact > 1 ? "var(--neg)" : "var(--pos)",
+                      color: impact === null ? undefined : impact > 1 ? "var(--neg)" : "var(--pos)",
                     }}
                   >
                     {impact !== null ? `${impact.toFixed(3)}%` : "—"}
                   </span>
                 </div>
-                {output?.price != null && (
-                  <div className="flex justify-between">
-                    <span className="text-muted">Rate</span>
-                    <span>
-                      1 {input?.symbol} ≈ {autoUsd(input?.price ?? 0)}
-                    </span>
-                  </div>
-                )}
               </div>
             </>
           )}
@@ -463,34 +481,33 @@ export function SwapPanel() {
 
         {/* action */}
         {!connected ? (
-          <p className="mt-4 text-center text-[12px] text-muted">
-            Connect a wallet to execute this swap.
+          <p className="mt-5 text-center text-[14px] font-bold text-ink/60">
+            Connect a wallet to make this swap.
           </p>
         ) : (
           <button
             type="button"
             onClick={executeSwap}
             disabled={!quote || busy || overBalance}
-            className="mt-4 w-full px-6 py-3.5 text-[12px] font-semibold tracking-[0.11em] transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
-            style={{ background: "var(--amber)", color: "var(--bg)" }}
+            className="btn btn-orange mt-5 w-full !text-[16px]"
           >
             {status.kind === "building"
-              ? "BUILDING TRANSACTION…"
+              ? "Building transaction…"
               : status.kind === "signing"
-                ? "APPROVE IN YOUR WALLET…"
+                ? "Approve in your wallet…"
                 : status.kind === "sending"
-                  ? "CONFIRMING ON-CHAIN…"
-                  : `SWAP ${input?.symbol} → ${output?.symbol}`}
+                  ? "Confirming on-chain…"
+                  : `Swap ${input?.symbol} → ${output?.symbol}`}
           </button>
         )}
 
         {/* result */}
         {status.kind === "done" && (
           <div
-            className="mt-4 border p-3 text-[12px]"
-            style={{ borderColor: "var(--pos)", color: "var(--pos)" }}
+            className="pop-flat mt-4 p-3.5 text-[13.5px] font-bold !shadow-none"
+            style={{ background: "var(--lime)" }}
           >
-            Swap confirmed.{" "}
+            Swap confirmed!{" "}
             <a
               href={`https://solscan.io/tx/${status.signature}`}
               target="_blank"
@@ -503,14 +520,14 @@ export function SwapPanel() {
         )}
         {status.kind === "error" && (
           <div
-            className="mt-4 border p-3 text-[12px] break-words"
-            style={{ borderColor: "var(--neg)", color: "var(--neg)" }}
+            className="pop-flat mt-4 p-3.5 text-[13.5px] font-bold break-words !shadow-none"
+            style={{ background: "var(--coral)" }}
           >
             {status.message}
           </div>
         )}
 
-        <p className="mt-4 text-[10.5px] leading-relaxed text-dim">
+        <p className="mt-4 text-[11.5px] leading-relaxed font-medium text-ink/55">
           This executes a real swap through Jupiter on Solana mainnet, signed by your own wallet.
           Your keys never leave your wallet and this site cannot move funds on its own. It is a
           swap — not a Margin Call deposit or loan.

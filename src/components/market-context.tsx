@@ -100,13 +100,10 @@ export function LiveBadge({ label = "Live" }: { label?: string }) {
   const { snapshot, ageSeconds, refreshing, staleError } = useMarket();
   const degraded = !snapshot.sources.jupiter || !snapshot.sources.kamino || staleError !== null;
 
-  const color = degraded ? "var(--amber)" : "var(--pos)";
-  const text = degraded ? "Degraded feed" : label;
-
   return (
     <span
-      className="inline-flex items-center gap-2 border px-3 py-1.5 text-[9.5px] tracking-[0.14em] uppercase"
-      style={{ borderColor: color, color, background: "rgba(255,255,255,0.02)" }}
+      className="pill"
+      style={{ background: degraded ? "var(--gold)" : "var(--paper)" }}
       title={
         degraded
           ? snapshot.errors.join(" · ") || staleError || "Some sources are unavailable"
@@ -114,11 +111,11 @@ export function LiveBadge({ label = "Live" }: { label?: string }) {
       }
     >
       <span
-        className={refreshing ? "pulse-dot h-1.5 w-1.5 rounded-full" : "h-1.5 w-1.5 rounded-full"}
-        style={{ background: color }}
+        className={refreshing ? "blink h-2 w-2 rounded-full" : "h-2 w-2 rounded-full"}
+        style={{ background: degraded ? "var(--neg)" : "var(--pos)" }}
         aria-hidden="true"
       />
-      {text} · updated {formatAge(ageSeconds)}
+      {degraded ? "Degraded feed" : label} · {formatAge(ageSeconds)}
     </span>
   );
 }

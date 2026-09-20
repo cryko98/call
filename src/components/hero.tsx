@@ -5,6 +5,7 @@ import type { MarketAsset } from "@/lib/market";
 import { autoUsd, compactNum, compactUsd, fmt, NO_DATA, signedPct } from "@/lib/format";
 import { ContractBar } from "./chrome";
 import { LiveBadge, useMarket } from "./market-context";
+import { HandArrow, Mascot, PixelCloud, PixelCoin, Sparkle } from "./pixel-art";
 
 /* ------------------------------------------------------------------ */
 /* Reduced motion                                                      */
@@ -36,50 +37,35 @@ function usePrefersReducedMotion() {
 /* ------------------------------------------------------------------ */
 
 export function TickerTape() {
-  const { snapshot, ageSeconds } = useMarket();
+  const { snapshot } = useMarket();
   const feed = [...snapshot.collateral, ...snapshot.equities].filter((a) => a.price !== null);
   const row = feed.length ? [...feed, ...feed] : [];
-  const healthy = snapshot.sources.jupiter;
 
   return (
     <div
-      className="sticky top-0 z-[60] flex h-[34px] items-center overflow-hidden border-b border-line"
-      style={{ background: "rgba(6, 8, 10, 0.94)", backdropFilter: "blur(8px)" }}
+      className="sticky top-0 z-[60] flex h-[42px] items-center overflow-hidden border-b-[3px] border-ink"
+      style={{ background: "var(--lemon)" }}
     >
-      <div
-        className="label flex h-full shrink-0 items-center gap-2 border-r border-line bg-panel px-3"
-        title={`Prices from Jupiter · updated ${ageSeconds}s ago`}
-      >
-        <span
-          className="pulse-dot h-1.5 w-1.5 rounded-full"
-          style={{
-            background: healthy ? "var(--pos)" : "var(--amber)",
-            boxShadow: `0 0 8px ${healthy ? "var(--pos)" : "var(--amber)"}`,
-          }}
-          aria-hidden="true"
-        />
-        {healthy ? "Live · Jupiter" : "Feed down"}
-      </div>
-
       {row.length ? (
-        <div className="marquee-track flex w-max">
+        <div className="marquee-track flex w-max items-center">
           {row.map((a, i) => (
-            <span
-              key={`${a.symbol}-${i}`}
-              className="flex shrink-0 items-center gap-2 border-r border-line-soft px-4 text-[11.5px]"
-            >
-              <b className="font-semibold tracking-[0.04em]">{a.symbol}</b>
-              <span className="text-muted">{fmt(a.price, autoUsd)}</span>
+            <span key={`${a.symbol}-${i}`} className="flex shrink-0 items-center gap-2 px-5">
+              <span className="text-[14px] font-extrabold">{a.symbol}</span>
+              <span className="text-[14px] font-semibold">{fmt(a.price, autoUsd)}</span>
               {a.change24h !== null && (
-                <span style={{ color: a.change24h >= 0 ? "var(--pos)" : "var(--neg)" }}>
-                  {a.change24h >= 0 ? "▲" : "▼"} {signedPct(a.change24h)}
+                <span
+                  className="text-[13.5px] font-bold"
+                  style={{ color: a.change24h >= 0 ? "var(--pos)" : "var(--neg)" }}
+                >
+                  {a.change24h >= 0 ? "↑" : "↓"} {signedPct(a.change24h)}
                 </span>
               )}
+              <span className="ml-3 text-ink/30">★</span>
             </span>
           ))}
         </div>
       ) : (
-        <span className="px-4 text-[11.5px] text-dim">
+        <span className="px-5 text-[13.5px] font-bold">
           Price feed unavailable — retrying automatically
         </span>
       )}
@@ -88,131 +74,91 @@ export function TickerTape() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Terminal typewriter                                                 */
+/* Stacked price cards                                                 */
 /* ------------------------------------------------------------------ */
 
-type Tone = "cmd" | "ok" | "warn" | "dim";
+const TILTS = ["rotate(-4deg)", "rotate(2.2deg)", "rotate(-1.6deg)", "rotate(3.4deg)", "rotate(-2.6deg)"];
 
-const TONE_COLOR: Record<Tone, string> = {
-  cmd: "var(--pos)",
-  ok: "var(--pos)",
-  warn: "var(--amber)",
-  dim: "var(--muted)",
-};
+function PriceCard({
+  asset,
+  index,
+  reduced,
+}: {
+  asset: MarketAsset;
+  index: number;
+  reduced: boolean;
+}) {
+  return (
+    <div
+      className="pop pop-hover pop-in relative flex items-center gap-3 px-4 py-3.5 sm:gap-4 sm:px-5"
+      style={{
+        background: asset.tint,
+        transform: reduced ? undefined : TILTS[index % TILTS.length],
+        marginTop: index === 0 ? 0 : -10,
+        zIndex: index,
+        animationDelay: `${index * 80}ms`,
+      }}
+    >
+      <span
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-[2.5px] border-ink bg-white text-[12px] font-extrabold sm:h-11 sm:w-11"
+        aria-hidden="true"
+      >
+        {asset.symbol.replace(/x$/, "").slice(0, 4)}
+      </span>
 
-/**
- * The session narrates a position built from the live SOL price and the live
- * Kamino parameters, so the terminal never contradicts the calculator below.
- */
-function buildLines(sol: MarketAsset | undefined, nvda: MarketAsset | undefined) {
-  const price = sol?.price ?? null;
-  const ltv = 0.5;
-  const amount = 100;
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-2">
+          <span className="text-[15px] font-extrabold tracking-[-0.02em] sm:text-[17px]">
+            {asset.symbol}/USD
+          </span>
+          <span className="pill pill-new">new!</span>
+        </span>
+        <span className="mt-0.5 block truncate text-[12.5px] font-semibold text-ink/60">
+          {asset.name}
+        </span>
+      </span>
 
-  if (price === null || !sol) {
-    return [
-      { text: "$ margin-call init --chain solana", tone: "cmd" as Tone },
-      { text: "  ✓ wallet connected · 7xK…9mQ2", tone: "ok" as Tone },
-      { text: "  ! price feed unreachable — retrying", tone: "warn" as Tone },
-    ];
-  }
-
-  const collateralValue = amount * price;
-  const debt = collateralValue * ltv;
-  const threshold = sol.liqThreshold ?? 0.8;
-  const liqPrice = debt / (amount * threshold);
-  const units = nvda?.price ? debt / nvda.price : null;
-
-  return [
-    { text: "$ margin-call init --chain solana", tone: "cmd" as Tone },
-    { text: "  ✓ wallet connected · 7xK…9mQ2", tone: "ok" as Tone },
-    { text: `$ deposit ${amount} SOL --as collateral`, tone: "cmd" as Tone },
-    { text: `  ✓ collateral posted · ${autoUsd(collateralValue)}`, tone: "ok" as Tone },
-    { text: `$ borrow ${Math.round(debt)} USDC --ltv ${ltv.toFixed(2)}`, tone: "cmd" as Tone },
-    { text: `  ✓ funded · liquidation at ${autoUsd(liqPrice)}`, tone: "ok" as Tone },
-    { text: "$ swap USDC → NVDAx", tone: "cmd" as Tone },
-    {
-      text: units
-        ? `  ✓ filled · ${units.toFixed(2)} NVDAx · long equity`
-        : "  ✓ filled · long equity",
-      tone: "warn" as Tone,
-    },
-    { text: "  ▸ crypto exposure: UNCHANGED", tone: "dim" as Tone },
-  ];
+      <span className="shrink-0 text-right">
+        <span className="block text-[16px] font-extrabold sm:text-[19px]">
+          {fmt(asset.price, autoUsd)}
+        </span>
+        {asset.change24h !== null && (
+          <span
+            className="block text-[13px] font-bold"
+            style={{ color: asset.change24h >= 0 ? "var(--pos)" : "var(--neg)" }}
+          >
+            {signedPct(asset.change24h)}
+          </span>
+        )}
+      </span>
+    </div>
+  );
 }
 
-function Terminal() {
-  const reduced = usePrefersReducedMotion();
+function StackedCards() {
   const { snapshot } = useMarket();
-  const sol = snapshot.collateral.find((a) => a.symbol === "SOL");
-  const nvda = snapshot.equities.find((a) => a.symbol === "NVDAx");
+  const reduced = usePrefersReducedMotion();
 
-  // Freeze the narrated numbers at mount so a background refresh does not
-  // rewrite lines that have already been typed out.
-  const [LINES] = useState(() => buildLines(sol, nvda));
+  const cards = snapshot.equities
+    .filter((a) => a.symbol !== "USDC" && a.price !== null)
+    .slice(0, 5);
 
-  const [lines, setLines] = useState<{ text: string; tone: Tone }[]>([]);
-  const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    if (reduced) return;
-
-    let lineIdx = 0;
-    let charIdx = 0;
-    let timer: ReturnType<typeof setTimeout>;
-
-    const step = () => {
-      if (lineIdx >= LINES.length) {
-        setDone(true);
-        return;
-      }
-      const line = LINES[lineIdx];
-      charIdx += 1;
-
-      const partial = line.text.slice(0, charIdx);
-      const at = lineIdx;
-      setLines((prev) => {
-        const next = prev.slice(0, at);
-        next.push({ text: partial, tone: line.tone });
-        return next;
-      });
-
-      if (charIdx >= line.text.length) {
-        lineIdx += 1;
-        charIdx = 0;
-        timer = setTimeout(step, 230);
-      } else {
-        timer = setTimeout(step, line.tone === "cmd" ? 24 : 11);
-      }
-    };
-
-    timer = setTimeout(step, 420);
-    return () => clearTimeout(timer);
-  }, [reduced, LINES]);
-
-  // With motion reduced the whole session is shown at once, no typing.
-  const shown = reduced ? LINES : lines;
-  const showCaret = reduced || done;
+  if (!cards.length) {
+    return (
+      <div className="pop p-6 text-center text-[14px] font-bold">
+        Live prices are unavailable right now.
+      </div>
+    );
+  }
 
   return (
-    <div className="panel max-w-xl">
-      <div className="label flex items-center gap-2 border-b border-line bg-panel-2 px-3 py-2">
-        <span className="h-2 w-2 rounded-full" style={{ background: "#ff5f57" }} aria-hidden="true" />
-        <span className="h-2 w-2 rounded-full" style={{ background: "#febc2e" }} aria-hidden="true" />
-        <span className="h-2 w-2 rounded-full" style={{ background: "#28c840" }} aria-hidden="true" />
-        <span className="ml-1.5 normal-case">margin-call — /bin/sh — 80×24</span>
-      </div>
-      <div
-        className="px-4 py-3.5 text-[12px] leading-[1.95]"
-        style={{ minHeight: 196 }}
-        aria-label="Example position built from live prices"
-      >
-        {shown.map((l, i) => (
-          <div key={i} style={{ color: TONE_COLOR[l.tone] }}>
-            {l.text}
-          </div>
+    <div className="relative">
+      <Sparkle size={34} className="absolute -top-5 -left-4 z-20 hidden sm:block" />
+      <Sparkle size={24} className="absolute -right-3 bottom-8 z-20 hidden sm:block" />
+      <div className="flex flex-col">
+        {cards.map((a, i) => (
+          <PriceCard key={a.symbol} asset={a} index={i} reduced={reduced} />
         ))}
-        {showCaret && <span className="caret" aria-hidden="true" />}
       </div>
     </div>
   );
@@ -245,36 +191,33 @@ function useCountUp(target: number | null, duration = 1200) {
   return reduced ? target : value;
 }
 
-function StatCell({
+function StatCard({
   label,
   target,
   format,
   note,
-  noteTone,
+  tint,
   delay,
 }: {
   label: string;
   target: number | null;
   format: (v: number) => string;
   note: string;
-  noteTone?: "pos" | "dim";
+  tint: string;
   delay: number;
 }) {
   const v = useCountUp(target);
 
   return (
     <div
-      className="rise border-b border-line px-5 py-5 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0"
-      style={{ animationDelay: `${delay}ms` }}
+      className="pop pop-in pop-hover p-5"
+      style={{ background: tint, animationDelay: `${delay}ms` }}
     >
       <div className="label">{label}</div>
-      <div className="mt-1.5 text-[24px] font-semibold tracking-tight sm:text-[27px]">
-        {v === null ? <span className="text-dim">{NO_DATA}</span> : format(v)}
+      <div className="mt-1.5 text-[28px] font-extrabold tracking-[-0.035em] sm:text-[32px]">
+        {v === null ? <span className="text-ink/35">{NO_DATA}</span> : format(v)}
       </div>
-      <div
-        className="mt-1 text-[10.5px]"
-        style={{ color: noteTone === "pos" ? "var(--pos)" : "var(--dim)" }}
-      >
+      <div className="mt-0.5 text-[12.5px] font-semibold text-ink/55">
         {v === null ? "source unavailable" : note}
       </div>
     </div>
@@ -287,39 +230,42 @@ export function StatStrip() {
   const solBorrow = snapshot.collateral.find((a) => a.symbol === "SOL")?.borrowApy ?? null;
 
   return (
-    <div className="border-y border-line bg-panel">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCell
-          label="xStock liquidity on Solana"
+    <section className="band-edge band-paper px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="xStock liquidity"
           target={totals.equityLiquidityUsd}
           format={compactUsd}
-          note="across tracked equity pools"
-          delay={220}
+          note="across tracked pools"
+          tint="var(--periwinkle)"
+          delay={0}
         />
-        <StatCell
-          label="xStock 24h volume"
+        <StatCard
+          label="24h volume"
           target={totals.equityVolume24h}
           format={compactUsd}
           note="real DEX turnover"
-          noteTone="pos"
-          delay={290}
+          tint="var(--lime)"
+          delay={70}
         />
-        <StatCell
-          label="Live equity markets"
+        <StatCard
+          label="Live stock markets"
           target={totals.equityMarkets}
           format={(v) => compactNum(v)}
           note="priced this minute"
-          delay={360}
+          tint="var(--gold)"
+          delay={140}
         />
-        <StatCell
+        <StatCard
           label="SOL borrow rate"
           target={solBorrow}
           format={(v) => `${v.toFixed(2)}%`}
           note="Kamino main market"
-          delay={430}
+          tint="var(--coral)"
+          delay={210}
         />
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -329,71 +275,76 @@ export function StatStrip() {
 
 export function Hero() {
   return (
-    <section id="top" className="relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="bg-grid bg-grid-fade absolute inset-0" />
-        <div className="glow-amber absolute inset-x-0 top-0 h-[520px]" />
-      </div>
+    <section id="top" className="sunburst band-sky relative overflow-hidden px-4 pt-12 pb-16 sm:px-6 sm:pt-16 sm:pb-20">
+      {/* ornaments */}
+      <PixelCloud size={140} className="absolute top-10 left-2 text-white/80" />
+      <PixelCloud size={110} className="absolute top-40 right-4 text-white/65" />
+      <PixelCloud size={90} className="absolute bottom-10 left-1/4 text-white/55 hidden lg:block" />
+      <PixelCoin size={46} className="bob absolute top-24 right-[12%] hidden lg:block" />
+      <PixelCoin size={34} className="bob absolute bottom-24 left-[6%] hidden lg:block" style={{ animationDelay: "1.2s" }} />
 
-      <div className="mx-auto max-w-6xl px-5 pt-16 pb-16 sm:px-6 sm:pt-20">
-        <div className="rise flex flex-wrap items-center gap-2.5">
-          <span className="label inline-flex items-center gap-2 border border-line bg-panel px-3 py-1.5">
-            <span
-              className="pulse-dot h-1.5 w-1.5 rounded-full"
-              style={{ background: "var(--pos)" }}
-              aria-hidden="true"
-            />
-            Built on Solana · SPL token
-          </span>
-          <LiveBadge />
+      <div className="relative mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
+        {/* ---------------- copy ---------------- */}
+        <div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="pill" style={{ background: "var(--lemon)" }}>
+              Built on Solana
+            </span>
+            <LiveBadge />
+          </div>
+
+          <h1 className="mt-5 text-[42px] leading-[0.96] font-black tracking-[-0.04em] sm:text-[62px]">
+            Don&apos;t sell
+            <br />
+            your bags.
+            <br />
+            {/* Highlight is painted first and the text sits above it — no
+                negative z-index, which would fall behind the band colour. */}
+            <span className="relative inline-block">
+              <span
+                className="absolute inset-x-[-10px] inset-y-[2px] -rotate-1 rounded-xl border-[2.5px] border-ink"
+                style={{ background: "var(--lemon)" }}
+                aria-hidden="true"
+              />
+              <span className="relative">Borrow!</span>
+            </span>
+          </h1>
+
+          <p className="mt-6 max-w-lg text-[16px] leading-relaxed font-medium text-ink/75 sm:text-[17.5px]">
+            Post SOL or BTC as collateral, draw stablecoins against it, and buy tokenized stocks —
+            AAPL, NVDA, TSLA — without ever closing your crypto position.
+          </p>
+
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            <a href="#swap" className="btn btn-orange">
+              Trade now
+            </a>
+            <a href="#borrow" className="btn">
+              Run the numbers
+            </a>
+          </div>
+
+          <div className="mt-7 flex items-end gap-3">
+            <ContractBar />
+            <span className="hand hidden shrink-0 -rotate-6 pb-2 text-[19px] text-ink/60 sm:block">
+              coming at launch!
+            </span>
+          </div>
         </div>
 
-        <h1
-          className="rise mt-6 max-w-3xl text-[34px] leading-[1.06] font-bold tracking-[-0.02em] sm:text-[58px]"
-          style={{ animationDelay: "70ms" }}
-        >
-          Don&apos;t sell your bags.
-          <br />
-          <span style={{ color: "var(--amber)", textShadow: "0 0 34px rgba(255,176,0,0.28)" }}>
-            Borrow against them.
-          </span>
-        </h1>
+        {/* ---------------- stacked live cards ---------------- */}
+        <div className="relative">
+          <div className="relative z-10">
+            <StackedCards />
+          </div>
 
-        <p
-          className="rise mt-5 max-w-2xl text-[13.5px] leading-[1.8] text-muted sm:text-[15px]"
-          style={{ animationDelay: "140ms" }}
-        >
-          Post SOL, BTC or ETH as collateral. Draw stablecoin liquidity against it. Buy tokenized
-          equities — AAPL, NVDA, TSLA — without ever closing your crypto position. One margin
-          account, two markets, zero paperwork.
-        </p>
-
-        <div className="rise mt-8" style={{ animationDelay: "210ms" }}>
-          <Terminal />
-        </div>
-
-        <div
-          id="buy"
-          className="rise mt-8 flex scroll-mt-28 flex-col gap-3 sm:flex-row"
-          style={{ animationDelay: "280ms" }}
-        >
-          <a
-            href="#borrow"
-            className="px-6 py-3.5 text-center text-[12px] font-semibold tracking-[0.11em] transition-opacity hover:opacity-90"
-            style={{ background: "var(--amber)", color: "var(--bg)" }}
-          >
-            RUN THE NUMBERS →
-          </a>
-          <a
-            href="#how"
-            className="border border-line bg-panel px-6 py-3.5 text-center text-[12px] font-semibold tracking-[0.11em] transition-colors hover:border-muted"
-          >
-            SEE HOW IT WORKS
-          </a>
-        </div>
-
-        <div className="rise mt-6" style={{ animationDelay: "350ms" }}>
-          <ContractBar />
+          <div className="relative mt-8 hidden justify-end sm:flex">
+            <span className="hand absolute top-4 left-2 -rotate-6 text-[22px] text-ink/70">
+              real prices, live
+            </span>
+            <HandArrow size={64} className="absolute top-2 left-[150px] rotate-12 text-ink/45" />
+            <Mascot size={150} className="bob" />
+          </div>
         </div>
       </div>
     </section>

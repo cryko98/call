@@ -29,14 +29,13 @@ function AssetChip({
       disabled={disabled}
       aria-pressed={active}
       title={disabled ? `${asset.symbol} has no live price right now` : asset.name}
-      className="flex items-center gap-2 border px-3 py-2 text-[11.5px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+      className="rounded-full border-[2.5px] border-ink px-3.5 py-2 text-[13.5px] font-extrabold transition-all disabled:cursor-not-allowed disabled:opacity-35"
       style={{
-        borderColor: active ? "var(--amber)" : "var(--line)",
-        background: active ? "rgba(255, 176, 0, 0.09)" : "var(--bg)",
-        color: active ? "var(--text)" : "var(--muted)",
+        background: active ? asset.tint : "var(--paper)",
+        boxShadow: active ? "3px 3px 0 var(--ink)" : "none",
+        transform: active ? "translate(-1px, -1px)" : undefined,
       }}
     >
-      <span className="h-1.5 w-1.5 shrink-0" style={{ background: asset.tint }} aria-hidden="true" />
       {asset.symbol}
     </button>
   );
@@ -59,16 +58,18 @@ function Row({
 }) {
   const missing = value === NO_DATA;
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-line py-3 last:border-b-0">
-      <span className="text-[11.5px] text-muted">{label}</span>
+    <div className="flex items-baseline justify-between gap-4 border-b-2 border-ink/10 py-3 last:border-b-0">
+      <span className="text-[13.5px] font-semibold text-ink/65">{label}</span>
       <span className="text-right">
         <span
-          className="text-[14px] font-semibold"
-          style={missing ? { color: "var(--dim)" } : color ? { color } : undefined}
+          className="text-[16px] font-extrabold"
+          style={missing ? { color: "var(--ink-faint)" } : color ? { color } : undefined}
         >
           {value}
         </span>
-        {hint && !missing ? <span className="ml-2 text-[11px] text-dim">{hint}</span> : null}
+        {hint && !missing ? (
+          <span className="ml-2 text-[12.5px] font-semibold text-ink/45">{hint}</span>
+        ) : null}
       </span>
     </div>
   );
@@ -80,6 +81,14 @@ function Row({
 
 /** Used only when Kamino has no reserve for the selected collateral. */
 const FALLBACK_MAX_LTV = 0.5;
+
+const BAND_TINT: Record<string, string> = {
+  Safe: "var(--lime)",
+  Moderate: "var(--gold)",
+  "At risk": "var(--coral)",
+  Liquidatable: "var(--coral)",
+  "No debt": "var(--mist)",
+};
 
 export function BorrowCalculator() {
   const { snapshot } = useMarket();
@@ -113,17 +122,14 @@ export function BorrowCalculator() {
     const borrowPrice = borrow?.price ?? null;
     const threshold = collateral?.liqThreshold ?? null;
 
-    if (price === null) {
-      return { amount, unavailable: true } as const;
-    }
+    if (price === null) return { amount, unavailable: true } as const;
 
     const collateralValue = amount * price;
     const debtValue = collateralValue * ltv;
     const borrowUnits = borrowPrice ? debtValue / borrowPrice : null;
 
     // Liquidation triggers when debt === collateralAmount * price * threshold.
-    const liqPrice =
-      threshold !== null && amount > 0 ? debtValue / (amount * threshold) : null;
+    const liqPrice = threshold !== null && amount > 0 ? debtValue / (amount * threshold) : null;
     const dropToLiq = liqPrice !== null ? (1 - liqPrice / price) * 100 : null;
 
     const healthFactor =
@@ -162,20 +168,19 @@ export function BorrowCalculator() {
         ? 0
         : 100;
 
-  const dropLabel = !result.unavailable && result.dropToLiq !== null
-    ? `${num(result.dropToLiq, 0)}%`
-    : NO_DATA;
+  const dropLabel =
+    !result.unavailable && result.dropToLiq !== null ? `${num(result.dropToLiq, 0)}%` : NO_DATA;
 
   return (
-    <div className="panel">
+    <div className="pop-lg overflow-hidden">
       <div className="grid lg:grid-cols-[1.05fr_1fr]">
         {/* ---------------- inputs ---------------- */}
-        <div className="border-b border-line p-6 sm:p-7 lg:border-b-0 lg:border-r">
+        <div className="border-b-[3px] border-ink p-6 sm:p-8 lg:border-r-[3px] lg:border-b-0">
           <div>
             <label className="label" htmlFor="calc-amount">
-              Collateral asset
+              I have
             </label>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2.5 flex flex-wrap gap-2">
               {collateralList.map((a) => (
                 <AssetChip
                   key={a.symbol}
@@ -187,7 +192,7 @@ export function BorrowCalculator() {
               ))}
             </div>
 
-            <div className="mt-3.5 flex items-center border border-line bg-bg focus-within:border-muted">
+            <div className="pop-flat mt-3.5 flex items-center overflow-hidden !shadow-none">
               <input
                 id="calc-amount"
                 type="number"
@@ -196,18 +201,18 @@ export function BorrowCalculator() {
                 inputMode="decimal"
                 value={amountInput}
                 onChange={(e) => setAmountInput(e.target.value)}
-                className="w-full bg-transparent px-4 py-3 text-[19px] font-semibold outline-none"
+                className="w-full bg-transparent px-4 py-3.5 text-[24px] font-extrabold outline-none"
               />
-              <span className="shrink-0 border-l border-line px-4 py-3 text-[12px] tracking-[0.06em] text-muted">
+              <span className="shrink-0 border-l-[2.5px] border-ink px-4 py-3.5 text-[14px] font-extrabold">
                 {collateral?.symbol ?? NO_DATA}
               </span>
             </div>
-            <p className="mt-2 text-[11.5px] text-dim">
-              {fmt(collateral?.price ?? null, autoUsd)} per {collateral?.symbol} ·{" "}
+            <p className="mt-2 text-[13px] font-semibold text-ink/55">
+              {fmt(collateral?.price ?? null, autoUsd)} each ·{" "}
               {collateral?.supplyApy !== null && collateral?.supplyApy !== undefined ? (
                 <>
-                  earning <span style={{ color: "var(--pos)" }}>{pct(collateral.supplyApy)}</span>{" "}
-                  supply APY
+                  earns <b style={{ color: "var(--pos)" }}>{pct(collateral.supplyApy)}</b> while it
+                  sits
                 </>
               ) : (
                 <>supply rate unavailable</>
@@ -216,8 +221,8 @@ export function BorrowCalculator() {
           </div>
 
           <div className="mt-7">
-            <span className="label">Borrow asset</span>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <span className="label">I want to borrow</span>
+            <div className="mt-2.5 flex flex-wrap gap-2">
               {borrowList.map((a) => (
                 <AssetChip
                   key={a.symbol}
@@ -233,10 +238,10 @@ export function BorrowCalculator() {
           <div className="mt-7">
             <div className="flex items-baseline justify-between">
               <label className="label" htmlFor="calc-ltv">
-                Loan-to-value
+                How much of it?
               </label>
-              <span className="text-[16px] font-semibold" style={{ color: "var(--amber)" }}>
-                {effectiveLtv}%
+              <span className="pill" style={{ background: "var(--lemon)" }}>
+                {effectiveLtv}% LTV
               </span>
             </div>
             <input
@@ -247,64 +252,64 @@ export function BorrowCalculator() {
               step={1}
               value={effectiveLtv}
               onChange={(e) => setLtvPct(Number(e.target.value))}
-              className="mt-3.5"
+              className="mt-4"
             />
-            <div className="mt-2 flex justify-between text-[10.5px] text-dim">
-              <span>5%</span>
-              <span title={ltvIsLive ? "Live from Kamino's main market" : "No live reserve — using a conservative default"}>
-                Max {maxLtvPct}% for {collateral?.symbol}
-                {ltvIsLive ? " · live" : " · default"}
+            <div className="mt-2 flex justify-between text-[12.5px] font-semibold text-ink/50">
+              <span>Careful</span>
+              <span
+                title={
+                  ltvIsLive
+                    ? "Live from Kamino's main market"
+                    : "No live reserve — using a conservative default"
+                }
+              >
+                Max {maxLtvPct}%{ltvIsLive ? " (live)" : " (default)"}
               </span>
             </div>
           </div>
         </div>
 
         {/* ---------------- outputs ---------------- */}
-        <div className="bg-panel-2 p-6 sm:p-7">
+        <div className="p-6 sm:p-8" style={{ background: "var(--mist)" }}>
           <div className="flex items-start justify-between gap-3">
-            <div className="label">You can borrow</div>
+            <div className="label">You could borrow</div>
             <LiveBadge />
           </div>
 
-          <div className="mt-2 text-[32px] leading-none font-bold tracking-tight sm:text-[38px]">
+          <div className="mt-2 text-[38px] leading-none font-black tracking-[-0.04em] sm:text-[46px]">
             {result.unavailable || result.borrowUnits === null ? (
-              <span className="text-dim">{NO_DATA}</span>
+              <span className="text-ink/30">{NO_DATA}</span>
             ) : (
-              <span style={{ color: "var(--pos)", textShadow: "0 0 30px rgba(0,230,118,0.22)" }}>
-                {num(result.borrowUnits, result.borrowUnits >= 1000 ? 0 : 2)}
-              </span>
+              num(result.borrowUnits, result.borrowUnits >= 1000 ? 0 : 2)
             )}{" "}
-            <span className="text-[19px] text-muted sm:text-[21px]">{borrow?.symbol}</span>
+            <span className="text-[22px] font-extrabold text-ink/50 sm:text-[26px]">
+              {borrow?.symbol}
+            </span>
           </div>
-          <div className="mt-2 text-[12.5px] text-muted">
+          <div className="mt-1.5 text-[14px] font-bold text-ink/55">
             {result.unavailable ? NO_DATA : usd(result.debtValue)}
           </div>
 
-          <div className="mt-6">
+          <div className="mt-5">
             <Row
               label="Collateral value"
               value={result.unavailable ? NO_DATA : usd(result.collateralValue)}
             />
             <Row
-              label="Liquidation price"
+              label="Liquidated at"
               value={result.unavailable ? NO_DATA : fmt(result.liqPrice, autoUsd)}
               hint={dropLabel === NO_DATA ? undefined : `−${dropLabel}`}
               color="var(--neg)"
             />
+            <Row label="Borrow rate" value={fmt(borrow?.borrowApy ?? null, (v) => pct(v))} hint="Kamino" />
             <Row
-              label="Borrow APY"
-              value={fmt(borrow?.borrowApy ?? null, (v) => pct(v))}
-              hint="Kamino"
-              color="var(--amber)"
-            />
-            <Row
-              label="Net annual carry"
+              label="Net per year"
               value={
                 result.unavailable || result.netAnnual === null
                   ? NO_DATA
                   : `${result.netAnnual >= 0 ? "+" : "−"}${usd(Math.abs(result.netAnnual))}`
               }
-              hint="supply yield − interest"
+              hint="yield − interest"
               color={
                 !result.unavailable && result.netAnnual !== null && result.netAnnual >= 0
                   ? "var(--pos)"
@@ -314,24 +319,26 @@ export function BorrowCalculator() {
           </div>
 
           {/* health factor */}
-          <div className="mt-6 border border-line bg-bg p-4">
+          <div
+            className="pop-flat mt-5 p-4 !shadow-none"
+            style={{ background: hf === null ? "var(--paper)" : BAND_TINT[band.label] }}
+          >
             <div className="flex items-baseline justify-between">
               <span className="label">Health factor</span>
-              <span
-                className="text-[15px] font-semibold"
-                style={{ color: hf === null ? "var(--dim)" : band.color }}
-              >
+              <span className="text-[19px] font-extrabold">
                 {hf === null ? NO_DATA : Number.isFinite(hf) ? num(hf, 2) : "∞"}
-                {hf !== null && <span className="ml-2 text-[11.5px] font-normal">{band.label}</span>}
+                {hf !== null && (
+                  <span className="ml-2 text-[13px] font-bold text-ink/60">{band.label}</span>
+                )}
               </span>
             </div>
-            <div className="mt-3 h-[5px] bg-line">
+            <div className="mt-3 h-3 overflow-hidden rounded-full border-[2.5px] border-ink bg-white">
               <div
                 className="h-full transition-all duration-300"
-                style={{ width: `${barPct}%`, background: hf === null ? "var(--dim)" : band.color }}
+                style={{ width: `${barPct}%`, background: "var(--ink)" }}
               />
             </div>
-            <p className="mt-3 text-[11.5px] leading-relaxed text-muted">
+            <p className="mt-2.5 text-[12.5px] leading-snug font-semibold text-ink/70">
               {hf === null
                 ? "Live risk parameters for this asset are unavailable right now."
                 : band.note(dropLabel, collateral?.symbol ?? "collateral")}
@@ -343,16 +350,16 @@ export function BorrowCalculator() {
               href={jupiterSwapUrl(collateral.mint, borrow.mint)}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 block border border-line bg-bg px-4 py-3 text-center text-[11.5px] font-semibold tracking-[0.1em] transition-colors hover:border-amber hover:text-amber"
+              className="btn mt-4 w-full !text-[14px]"
             >
-              SWAP {collateral.symbol} → {borrow.symbol} ON JUPITER ↗
+              Open this pair on Jupiter ↗
             </a>
           )}
 
-          <p className="mt-4 text-[10.5px] leading-relaxed text-dim">
-            Prices from Jupiter, rates and max LTV from Kamino&apos;s main market. Liquidation
-            thresholds are protocol parameters set 5pp above max LTV. Excludes gas, liquidation
-            penalties and rate drift — this is a sizing tool, not a risk system.
+          <p className="mt-4 text-[11.5px] leading-relaxed font-medium text-ink/50">
+            Prices from Jupiter, rates and max LTV from Kamino. Liquidation thresholds are protocol
+            parameters set 5pp above max LTV. Excludes gas, liquidation penalties and rate drift —
+            a sizing tool, not a risk system.
           </p>
         </div>
       </div>
