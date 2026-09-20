@@ -32,6 +32,8 @@ const LIQUIDATION_SPREAD = 0.05;
 const MAX_LIQ_THRESHOLD = 0.95;
 
 export type MarketAsset = TokenDef & {
+  /** From the token mint — required to size a swap amount correctly. */
+  decimals: number | null;
   price: number | null;
   change24h: number | null;
   volume24h: number | null;
@@ -66,6 +68,7 @@ export type MarketSnapshot = {
 
 type JupToken = {
   id: string;
+  decimals?: number;
   usdPrice?: number;
   liquidity?: number;
   mcap?: number;
@@ -162,6 +165,7 @@ function buildAsset(
 
   return {
     ...token,
+    decimals: finite(j?.decimals),
     price: finite(j?.usdPrice),
     change24h: finite(j?.stats24h?.priceChange),
     volume24h,

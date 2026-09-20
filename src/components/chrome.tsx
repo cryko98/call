@@ -33,6 +33,7 @@ export function Logo({ size = 26 }: { size?: number }) {
 const NAV_LINKS = [
   { href: "#how", label: "How it works" },
   { href: "#borrow", label: "Calculator" },
+  { href: "#swap", label: "Swap" },
   { href: "#markets", label: "Markets" },
   { href: "#token", label: "$CALL" },
   { href: "#roadmap", label: "Roadmap" },
@@ -81,11 +82,11 @@ export function Nav() {
 
         <div className="flex items-center gap-2.5">
           <a
-            href="#buy"
+            href="#swap"
             className="hidden border px-4 py-2 text-[11px] font-semibold tracking-[0.1em] transition-colors sm:block"
             style={{ borderColor: "var(--amber)", color: "var(--amber)" }}
           >
-            BUY $CALL
+            OPEN SWAP
           </a>
           <button
             type="button"

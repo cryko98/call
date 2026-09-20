@@ -119,7 +119,7 @@ export function Tokenomics() {
   return (
     <Section id="token">
       <SectionHead
-        tag="// 05 — The token"
+        tag="// 06 — The token"
         title="$CALL"
         sub="A fixed-supply SPL token. Protocol fees route to stakers, and governance controls collateral onboarding and risk parameters. The token is not minted yet, so this section is the launch plan — there is no price or market data to show."
       />
@@ -201,7 +201,7 @@ export function Roadmap() {
   return (
     <Section id="roadmap">
       <SectionHead
-        tag="// 06 — Roadmap"
+        tag="// 07 — Roadmap"
         title="Shipping order."
         sub="Dates are targets, not promises. Scope moves before deadlines do."
       />
@@ -245,7 +245,7 @@ export function Roadmap() {
 export function Faq() {
   return (
     <Section id="faq">
-      <SectionHead tag="// 07 — FAQ" title="Questions worth asking." />
+      <SectionHead tag="// 08 — FAQ" title="Questions worth asking." />
       <div className="panel mt-9">
         {FAQ.map((f, i) => (
           <details key={f.q} open={i === 0} className="group border-b border-line last:border-b-0">
